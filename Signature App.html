@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>한호빈T Signature 관리 어플리케이션</title>
+    <!-- ★ 타이틀에 테스트 환경임을 명시 -->
+    <title>[TEST] 한호빈T Signature 앱</title>
 
-    <!-- ====== PWA 설정을 위한 태그 ====== -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
-    <link rel="apple-touch-icon" href="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png">
+    <link rel="apple-touch-icon" href="https://hanhobin1011-cmyk.github.io/SignatureU/icon-512x512.png">
     
     <script>
         if ('serviceWorker' in navigator) {
@@ -17,7 +17,6 @@
             });
         }
     </script>
-    <!-- ======================================== -->
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Playfair+Display:ital,wght@1,700;1,900&display=swap" rel="stylesheet">
@@ -52,47 +51,55 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
     </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col selection:bg-yellow-500 selection:text-white">
+<body class="antialiased min-h-screen flex flex-col selection:bg-purple-500 selection:text-white">
 
-    <!-- [화면 0] 앱 시작 및 새로고침 시 스플래시 화면 -->
+    <!-- [화면 0] 스플래시 화면 -->
     <div id="screen-splash" class="flex-1 flex flex-col items-center justify-center p-6 fixed inset-0 bg-[#121212] z-[120]">
-        <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="Signature Icon" class="w-20 h-20 rounded-[22%] mb-8 animate-pulse shadow-lg shadow-yellow-500/20 border border-gray-800 object-cover" onerror="this.style.display='none'">
-        <svg class="animate-spin h-8 w-8 text-yellow-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <p id="splash-text" class="text-gray-400 font-bold text-sm text-center">학원 데이터베이스 연동 중...</p>
+        <!-- ★ 테스트용 테마 색상 (보라색 계열로 변경) -->
+        <div class="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold mb-4">
+            STAGING ENVIRONMENT
+        </div>
+        <img src="https://hanhobin1011-cmyk.github.io/SignatureU/icon-512x512.png" alt="Icon" class="w-20 h-20 rounded-[22%] mb-8 animate-pulse shadow-lg shadow-purple-500/20 border border-gray-800 object-cover" onerror="this.style.display='none'">
+        <svg class="animate-spin h-8 w-8 text-purple-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <p id="splash-text" class="text-gray-400 font-bold text-sm text-center">테스트 데이터베이스 연결 중...</p>
     </div>
 
     <!-- [화면 1] 로그인 화면 -->
     <div id="screen-login" class="hidden-screen flex-1 flex flex-col items-center justify-center p-6 fade-in">
+        <div class="absolute top-4 right-4 bg-purple-600 text-white text-[10px] font-black px-2 py-1 rounded">TEST VERSION</div>
         <div class="text-center mb-10">
-            <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="Signature Icon" class="w-24 h-24 rounded-[22%] shadow-lg shadow-yellow-500/20 mx-auto mb-6 object-cover border border-gray-800" onerror="this.style.display='none'">
-            <h1 class="text-5xl font-signature italic font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-600 tracking-wider mb-2 drop-shadow-md">Signature</h1>
-            <p class="text-gray-400 text-sm mt-3">한호빈T Signature 관리 어플리케이션</p>
+            <img src="https://hanhobin1011-cmyk.github.io/SignatureU/icon-512x512.png" alt="Icon" class="w-24 h-24 rounded-[22%] shadow-lg shadow-purple-500/20 mx-auto mb-6 object-cover border border-gray-800" onerror="this.style.display='none'">
+            <h1 class="text-5xl font-signature italic font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-300 to-purple-600 tracking-wider mb-2 drop-shadow-md">Signature</h1>
+            <p class="text-purple-300 font-bold text-sm mt-3">개발 및 테스트 전용 서버</p>
         </div>
 
-        <div class="w-full max-w-sm bg-[#1E1E1E] rounded-3xl p-6 border border-gray-800 shadow-2xl">
+        <div class="w-full max-w-sm bg-[#1E1E1E] rounded-3xl p-6 border border-purple-900/50 shadow-2xl shadow-purple-900/20">
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1 ml-1">아이디</label>
-                    <input type="text" id="loginId" placeholder="부여받은 아이디 입력" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-yellow-500 transition-colors">
+                    <input type="text" id="loginId" placeholder="테스트 계정 입력" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-purple-500 transition-colors">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1 ml-1">비밀번호</label>
-                    <input type="password" id="loginPw" placeholder="비밀번호 입력" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-yellow-500 transition-colors" onkeypress="if(event.key==='Enter') tryLogin()">
+                    <input type="password" id="loginPw" placeholder="비밀번호 입력" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-purple-500 transition-colors" onkeypress="if(event.key==='Enter') tryLogin()">
                 </div>
-                <button id="btnLogin" onclick="tryLogin()" class="w-full bg-[#FEE500] hover:bg-yellow-400 text-[#191919] font-black py-4 rounded-xl mt-4 transition-colors shadow-lg shadow-yellow-500/20">로그인</button>
+                <button id="btnLogin" onclick="tryLogin()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-xl mt-4 transition-colors shadow-lg shadow-purple-500/20">테스트 서버 로그인</button>
             </div>
         </div>
     </div>
 
     <!-- 앱 공통 상단 헤더 -->
     <header id="app-header" class="hidden-screen sticky top-0 z-40 bg-glass border-b border-gray-800 px-5 py-4">
-        <div class="flex justify-between items-center max-w-md mx-auto w-full">
+        <div class="flex justify-between items-center max-w-md mx-auto w-full relative">
+            <!-- 테스트 서버 표시 (절대 안 헷갈리게) -->
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-[9px] font-bold px-2 py-0.5 rounded-b-md text-white">STAGING</div>
+            
             <div class="flex items-center gap-3 cursor-pointer" onclick="navTo('main')">
-                <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="Signature Icon" class="w-8 h-8 rounded-[22%] object-cover border border-gray-700 shadow-sm shadow-yellow-500/20" onerror="this.style.display='none'">
-                <span class="font-signature italic font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 tracking-wider text-xl mt-1">Signature</span>
+                <img src="https://hanhobin1011-cmyk.github.io/SignatureU/icon-512x512.png" alt="Icon" class="w-8 h-8 rounded-[22%] object-cover border border-purple-500/50 shadow-sm shadow-purple-500/20" onerror="this.style.display='none'">
+                <span class="font-signature italic font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600 tracking-wider text-xl mt-1">Signature</span>
             </div>
             <div class="flex gap-2">
-                <button onclick="refreshData()" class="flex items-center gap-1 text-xs font-bold text-blue-400 bg-blue-900/20 border border-blue-500/30 px-3 py-1.5 rounded-full hover:bg-blue-500 hover:text-white transition-colors">
+                <button onclick="refreshData()" class="flex items-center gap-1 text-xs font-bold text-purple-400 bg-purple-900/20 border border-purple-500/30 px-3 py-1.5 rounded-full hover:bg-purple-500 hover:text-white transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     새로고침
                 </button>
@@ -105,7 +112,7 @@
     <main id="screen-main" class="hidden-screen flex-1 p-5 max-w-md mx-auto w-full fade-in pb-24">
         <div class="mb-8 mt-2 relative">
             <div id="userBadge" class="inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-2"></div>
-            <h2 class="text-2xl font-bold text-white"><span id="userName" class="text-yellow-400"></span> 님,<br>오늘도 환영합니다!</h2>
+            <h2 class="text-2xl font-bold text-white"><span id="userName" class="text-purple-400"></span> 님,<br>오늘도 환영합니다!</h2>
             <p id="userClassInfo" class="text-sm text-gray-400 font-medium mt-2"></p>
         </div>
 
@@ -385,16 +392,15 @@
                 </div>
             </div>
             
-            <!-- 하단 액션 버튼부 -->
             <div class="flex flex-col gap-3 flex-shrink-0 pt-2 relative">
                 <div id="loadingOverlay" class="absolute inset-0 bg-[#1E1E1E]/90 backdrop-blur-sm z-10 hidden flex-col items-center justify-center rounded-xl">
                     <svg class="animate-spin h-6 w-6 text-yellow-500 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <span class="text-xs font-bold text-yellow-500">데이터를 안전하게 전송 중입니다...</span>
                 </div>
                 <button onclick="submitDataAndCopy()" class="w-full bg-[#FEE500] hover:bg-[#E5CF00] text-[#191919] font-bold py-3.5 rounded-xl transition-colors shadow-lg">제출하기</button>
-                
                 <div class="flex gap-2">
                     <button onclick="saveAndCloseTaskModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3.5 rounded-xl border border-gray-700 transition-colors text-sm">임시 저장하고 닫기</button>
+                    <!-- ★ 초기화 버튼 하단 고정 배치 -->
                     <button onclick="resetTaskSelections()" class="w-1/3 bg-red-900/20 hover:bg-red-900/40 text-red-400 font-bold py-3.5 rounded-xl border border-red-500/30 transition-colors text-sm whitespace-nowrap">초기화</button>
                 </div>
             </div>
@@ -456,18 +462,6 @@
         </div>
     </div>
 
-    <!-- 로그인 에러 모달 -->
-    <div id="loginErrorModal" class="fixed inset-0 bg-black/90 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl flex flex-col animate-fade-in-up">
-            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-2">로그인 실패</h3>
-            <p id="loginErrorMessage" class="text-gray-400 text-sm mb-6 leading-relaxed">아이디 또는 비밀번호가 일치하지 않습니다.</p>
-            <button onclick="closeLoginErrorModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors border border-gray-700 shadow-lg">다시 시도하기</button>
-        </div>
-    </div>
-
     <!-- 영상 시청 모달 -->
     <div id="videoModal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target === this) closeVideoModal()">
         <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-3xl w-full p-4 shadow-2xl flex flex-col animate-fade-in-up">
@@ -515,7 +509,8 @@
         // ==========================================
         // 1. 보안이 적용된 통신 세팅
         // ==========================================
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4goHVoKhC0u4Ixwa4a7PccPBfteAOZqnlAipBCjLZbZ1zEeIpTa3peBtcKyL3QW61ZQ/exec"; 
+        // ★ 새로 발급받은 개발(Staging)용 API URL 적용
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEw55_9bh5kxNewoIrfigxgGs7na6v408K3E2q-__CCtGe-nLsS9LqqqOcJkd8kIcT/exec"; 
         const APP_SECRET_KEY = "Signature2026!@";
 
         let globalDB = {}; 
@@ -564,7 +559,7 @@
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
                     if (attempt > 1 && splashText) {
-                        splashText.innerHTML = `네트워크 지연... 자동 재연결 중입니다 <br><span class="text-yellow-500 text-xs mt-1 inline-block">(${attempt}/${maxRetries}회 시도)</span>`;
+                        splashText.innerHTML = `네트워크 지연... 자동 재연결 중입니다 <br><span class="text-purple-500 text-xs mt-1 inline-block">(${attempt}/${maxRetries}회 시도)</span>`;
                     }
                     
                     const controller = new AbortController();
@@ -607,10 +602,9 @@
         }
 
         async function checkAutoLogin() {
-            const savedId = localStorage.getItem('sig_id');
-            const savedToken = localStorage.getItem('sig_token');
-            const oldPlainPw = localStorage.getItem('signature_pw'); 
-            if (oldPlainPw) localStorage.removeItem('signature_pw');
+            // STAGING 전용 토큰을 위해 키 이름 변경 (PROD와 충돌 방지)
+            const savedId = localStorage.getItem('sig_u_id');
+            const savedToken = localStorage.getItem('sig_u_token');
 
             if (!publicData) { showScreenOnly('login'); return; }
 
@@ -633,8 +627,8 @@
                         document.getElementById('screen-splash').classList.add('hidden-screen');
                         return;
                     } else {
-                        localStorage.removeItem('sig_id');
-                        localStorage.removeItem('sig_token');
+                        localStorage.removeItem('sig_u_id');
+                        localStorage.removeItem('sig_u_token');
                     }
                 } catch(e) {
                     console.error("Auto Login Error:", e);
@@ -671,8 +665,8 @@
                     currentUser = json.user;
                     globalDB = { ...publicData, ...json.privateData };
                     
-                    localStorage.setItem('sig_id', currentUser.id);
-                    localStorage.setItem('sig_token', pwHash); 
+                    localStorage.setItem('sig_u_id', currentUser.id);
+                    localStorage.setItem('sig_u_token', pwHash); 
                     
                     applyLoginState();
                     navTo('main');
@@ -734,8 +728,8 @@
 
         function logout() {
             currentUser = null;
-            localStorage.removeItem('sig_id');
-            localStorage.removeItem('sig_token');
+            localStorage.removeItem('sig_u_id');
+            localStorage.removeItem('sig_u_token');
             document.getElementById('loginId').value = '';
             document.getElementById('loginPw').value = '';
             document.getElementById('app-header').classList.add('hidden-screen');
@@ -998,10 +992,10 @@
             windowReportsData.forEach((rep, idx) => {
                 let btnHtml = rep.isOld 
                     ? `<button onclick="window.open('${encodeURI(rep.link)}', '_blank')" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold py-2 px-3 rounded-lg border border-gray-600 transition-colors flex items-center gap-1">기존 링크</button>`
-                    : `<button onclick="openReportDetailModal(${idx})" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> 분석 보기</button>`;
+                    : `<button onclick="openReportDetailModal(${idx})" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> 분석 보기</button>`;
 
                 const studentNameDisplay = escapeHTML(rep.studentName || currentUser.name);
-                container.innerHTML += `<div class="bg-[#1E1E1E] p-4 md:p-5 rounded-2xl border border-gray-700 flex justify-between items-center mb-3 hover:border-gray-500 transition-colors"><div><span class="text-[11px] text-gray-500 font-bold mb-0.5 block">${studentNameDisplay} 학생</span><h3 class="text-white font-bold text-base md:text-lg">${escapeHTML(rep.week)} 리포트</h3></div>${btnHtml}</div>`;
+                container.innerHTML += `<div class="bg-[#1E1E1E] p-4 md:p-5 rounded-2xl border border-gray-700 flex justify-between items-center mb-3 hover:border-purple-500/50 transition-colors"><div><span class="text-[11px] text-gray-500 font-bold mb-0.5 block">${studentNameDisplay} 학생</span><h3 class="text-white font-bold text-base md:text-lg">${escapeHTML(rep.week)} 리포트</h3></div>${btnHtml}</div>`;
             });
         }
 
@@ -1182,7 +1176,7 @@
                             <div class="flex items-center gap-4">
                                 <span class="text-xs font-bold text-gray-500 bg-[#121212] px-2 py-1 rounded hidden md:inline-block">${item.count}제</span>
                                 <div class="relative flex items-center justify-center">
-                                    <div id="ui-box-${uniqueId}" class="w-6 h-6 border-2 rounded check-btn flex items-center justify-center bg-transparent border-gray-600 ${taskStore[uniqueId].isDone ? boxBorderClass : ''}">
+                                    <div id="ui-box-${uniqueId}" class="w-6 h-6 border-2 border-gray-600 rounded check-btn flex items-center justify-center bg-transparent ${taskStore[uniqueId].isDone ? boxBorderClass : ''}">
                                         <svg id="ui-svg-${uniqueId}" class="w-4 h-4 text-white transition-opacity ${checkIconOpacity}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                     </div>
                                 </div>
@@ -1230,8 +1224,6 @@
                     btn.textContent = i; btn.dataset.level = level;
                     let selectedClass = level === 'A' ? 'border-green-500 bg-green-500' : level === 'B' ? 'border-blue-500 bg-blue-500' : 'border-red-500 bg-red-500';
                     let defaultClass = level === 'A' ? 'border-green-900/50 text-green-400 bg-green-900/10' : level === 'B' ? 'border-blue-900/50 text-blue-400 bg-blue-900/10' : 'border-red-900/50 text-red-400 bg-red-900/10';
-                    
-                    // 문항 고유 식별자 (예: B9, C15)
                     const qId = level + i.toString(); 
 
                     if (currentSelectedQs.has(qId)) btn.className = `w-[42px] h-[42px] rounded-lg text-sm font-bold border-2 ${selectedClass} text-white shadow-lg scale-105 flex items-center justify-center transition-all`;
@@ -1249,10 +1241,8 @@
             document.getElementById('modalStatusText').className = this.checked ? `ml-3 text-sm font-bold ${tData.text}` : 'ml-3 text-sm font-bold text-gray-400';
         });
 
-        // 스마트 정렬 (예: B9, B10, C1 순서로 정렬)
         function sortQuestions(a, b) {
-            const levelA = a.charAt(0); 
-            const levelB = b.charAt(0);
+            const levelA = a.charAt(0); const levelB = b.charAt(0);
             if (levelA !== levelB) return levelA.localeCompare(levelB);
             return parseInt(a.substring(1)) - parseInt(b.substring(1));
         }
@@ -1348,7 +1338,7 @@
             loadingOverlay.classList.remove('hidden');
 
             try {
-                // 클립보드 복사는 비동기 딜레이 이전에 가장 먼저 실행 (권한 회피)
+                // 클립보드 복사는 비동기 딜레이 이전에 가장 먼저 실행
                 copyToClipboardText(studentName, `${currentTask.weekNum}주차 D${currentTask.dayNum} (${currentTask.date})`, stateText, qsText, memo);
 
                 const base64Images = [];
@@ -1441,8 +1431,7 @@
             let foundCount = 0;
             
             if (qsArr && qsArr.length > 0) {
-                qsArr.forEach(qId => { // qId 예: 'B9', 'C15'
-                    // 글로벌 DB의 해설영상 탭 정보 활용
+                qsArr.forEach(qId => { 
                     const vLink = globalDB.videos ? globalDB.videos[qId] : null;
                     const hLink = globalDB.handwritten ? globalDB.handwritten[qId] : null;
                     
@@ -1509,14 +1498,6 @@
         }
         function closeErrorModal() { document.getElementById('submitErrorModal').classList.add('hidden'); }
 
-        function showLoginErrorModal(msg) {
-            const msgEl = document.getElementById('loginErrorMessage');
-            if(msgEl) msgEl.innerHTML = msg;
-            const modal = document.getElementById('loginErrorModal');
-            if(modal) modal.classList.remove('hidden');
-        }
-        function closeLoginErrorModal() { document.getElementById('loginErrorModal').classList.add('hidden'); }
-
         function getDrivePreviewUrl(url) {
             if (!url) return '';
             let fileId = '';
@@ -1572,7 +1553,7 @@
                     reader.onload = function(e) {
                         const img = document.createElement('img');
                         img.src = e.target.result;
-                        img.className = 'w-20 h-20 object-cover rounded-lg border border-gray-600 flex-shrink-0';
+                        img.className = 'w-20 h-20 object-cover rounded-lg border border-purple-600 flex-shrink-0';
                         grid.appendChild(img);
                     }
                     reader.readAsDataURL(file);
@@ -1590,12 +1571,6 @@
             document.getElementById('photoPreviewContainer').classList.add('hidden');
             document.getElementById('photoUploadBtn').classList.remove('hidden');
         }
-    </script>
-    <script>
-      document.addEventListener('contextmenu', e => e.preventDefault());
-      document.addEventListener('keydown', e => {
-        if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) { e.preventDefault(); e.returnValue = false; }
-      });
     </script>
 </body>
 </html>
