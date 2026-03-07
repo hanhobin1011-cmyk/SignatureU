@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.hanhobin1011_cmyk.twa",
+        "sha256_cert_fingerprints": ["B6:9B:85:3D:7A:E2:20:15:27:0B:93:09:BE:8E:5C:9A:0D:51:72:79:EA:5C:1D:E1:04:FD:98:30:53:89:E4:53"]
+      }
+    }]

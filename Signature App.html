@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>한호빈T Signature 관리 어플리케이션</title>
+
+    <!-- ====== PWA 설정을 위한 태그 ====== -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png">
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed: ', err));
+            });
+        }
+    </script>
+    <!-- ======================================== -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Playfair+Display:ital,wght@1,700;1,900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #E0E0E0;
+            font-family: 'Noto Sans KR', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            word-break: keep-all;
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden-screen { display: none !important; }
+        .bg-glass { background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(10px); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        
+        .checked-blue { background-color: #3b82f6; border-color: #3b82f6; color: white; }
+        .checked-red { background-color: #ef4444; border-color: #ef4444; color: white; }
+        .checked-green { background-color: #22c55e; border-color: #22c55e; color: white; }
+        .checked-purple { background-color: #a855f7; border-color: #a855f7; color: white; }
+        .checked-yellow { background-color: #eab308; border-color: #eab308; color: white; }
+        
+        .font-signature { font-family: 'Playfair Display', serif; }
+        .bar-fill { transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col selection:bg-yellow-500 selection:text-white">
+
+    <!-- [화면 0] 앱 시작 및 새로고침 시 스플래시 화면 -->
+    <div id="screen-splash" class="flex-1 flex flex-col items-center justify-center p-6 fixed inset-0 bg-[#121212] z-[120]">
+        <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="Signature Icon" class="w-20 h-20 rounded-[22%] mb-8 animate-pulse shadow-lg shadow-yellow-500/20 border border-gray-800 object-cover" onerror="this.style.display='none'">
+        <svg class="animate-spin h-8 w-8 text-yellow-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <p id="splash-text" class="text-gray-400 font-bold text-sm text-center">학원 데이터베이스 연동 중...</p>
+    </div>
+
+    <!-- [화면 1] 로그인 화면 -->
+    <div id="screen-login" class="hidden-screen flex-1 flex flex-col items-center justify-center p-6 fade-in">
+        <div class="text-center mb-10">
+            <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="Signature Icon" class="w-24 h-24 rounded-[22%] shadow-lg shadow-yellow-500/20 mx-auto mb-6 object-cover border border-gray-800" onerror="this.style.display='none'">
+            <h1 class="text-5xl font-signature italic font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-600 tracking-wider mb-2 drop-shadow-md">Signature</h1>
+            <p class="text-gray-400 text-sm mt-3">한호빈T Signature 관리 어플리케이션</p>
+        </div>
+
+        <div class="w-full max-w-sm bg-[#1E1E1E] rounded-3xl p-6 border border-gray-800 shadow-2xl">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 ml-1">아이디</label>
+                    <input type="text" id="loginId" placeholder="부여받은 아이디 입력" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-yellow-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1 ml-1">비밀번호</label>
+                    <input type="password" id="loginPw" placeholder="비밀번호 입력" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-yellow-500 transition-colors" onkeypress="if(event.key==='Enter') tryLogin()">
+                </div>
+                <button id="btnLogin" onclick="tryLogin()" class="w-full bg-[#FEE500] hover:bg-yellow-400 text-[#191919] font-black py-4 rounded-xl mt-4 transition-colors shadow-lg shadow-yellow-500/20">로그인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 앱 공통 상단 헤더 -->
+    <header id="app-header" class="hidden-screen sticky top-0 z-40 bg-glass border-b border-gray-800 px-5 py-4">
+        <div class="flex justify-between items-center max-w-md mx-auto w-full">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="navTo('main')">
+                <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="Signature Icon" class="w-8 h-8 rounded-[22%] object-cover border border-gray-700 shadow-sm shadow-yellow-500/20" onerror="this.style.display='none'">
+                <span class="font-signature italic font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 tracking-wider text-xl mt-1">Signature</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="refreshData()" class="flex items-center gap-1 text-xs font-bold text-blue-400 bg-blue-900/20 border border-blue-500/30 px-3 py-1.5 rounded-full hover:bg-blue-500 hover:text-white transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    새로고침
+                </button>
+                <button onclick="logout()" class="text-xs font-bold text-gray-400 bg-gray-800 border border-gray-700 px-3 py-1.5 rounded-full hover:text-white transition-colors">로그아웃</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- [화면 2] 메인 대시보드 -->
+    <main id="screen-main" class="hidden-screen flex-1 p-5 max-w-md mx-auto w-full fade-in pb-24">
+        <div class="mb-8 mt-2 relative">
+            <div id="userBadge" class="inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-2"></div>
+            <h2 class="text-2xl font-bold text-white"><span id="userName" class="text-yellow-400"></span> 님,<br>오늘도 환영합니다!</h2>
+            <p id="userClassInfo" class="text-sm text-gray-400 font-medium mt-2"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button id="menu-homework" onclick="navTo('homework')" class="bg-[#1E1E1E] border border-gray-700 p-5 rounded-2xl text-left hover:border-yellow-500 hover:bg-gray-800 transition-all group col-span-2 hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="w-10 h-10 bg-yellow-500/20 text-yellow-400 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </div>
+                    <span class="text-xs font-bold bg-yellow-500 text-black px-2 py-1 rounded-full animate-pulse">진행중</span>
+                </div>
+                <h3 class="text-white font-bold text-lg">매일 과제 제출</h3>
+                <p class="text-gray-400 text-xs mt-1">오늘의 숙제를 점검하고 인증하세요.</p>
+            </button>
+
+            <button onclick="navTo('dashboard')" class="bg-[#1E1E1E] border border-gray-700 p-5 rounded-2xl text-left hover:border-blue-500 hover:bg-gray-800 transition-all group col-span-2">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                </div>
+                <h3 class="text-white font-bold text-lg">학생별 숙제 현황판</h3>
+                <p class="text-gray-400 text-xs mt-1">일자별 과제 제출 현황 및 성취도 분석</p>
+            </button>
+
+            <button onclick="navTo('report')" class="bg-[#1E1E1E] border border-gray-700 p-5 rounded-2xl text-left hover:border-purple-500 hover:bg-gray-800 transition-all group">
+                <div class="w-10 h-10 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center mb-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                </div>
+                <h3 class="text-white font-bold">주간 리포트</h3>
+                <p class="text-gray-400 text-xs mt-1">클리닉/인포그래픽</p>
+            </button>
+
+            <button onclick="navTo('schedule')" class="bg-[#1E1E1E] border border-gray-700 p-5 rounded-2xl text-left hover:border-green-500 hover:bg-gray-800 transition-all group">
+                <div class="w-10 h-10 bg-green-500/20 text-green-400 rounded-xl flex items-center justify-center mb-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                <h3 class="text-white font-bold">수업 스케줄</h3>
+                <p class="text-gray-400 text-xs mt-1">진도 및 복습 영상</p>
+            </button>
+
+            <button id="menu-board" onclick="navTo('board')" class="bg-[#1E1E1E] border border-gray-700 p-5 rounded-2xl text-left hover:border-red-500 hover:bg-gray-800 transition-all group col-span-2 hidden">
+                <div class="w-10 h-10 bg-red-500/20 text-red-400 rounded-xl flex items-center justify-center mb-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15M9 11l3 3L22 4"></path></svg>
+                </div>
+                <h3 class="text-white font-bold text-lg">알림 & 자료실</h3>
+                <p class="text-gray-400 text-xs mt-1">강사 공지사항 및 보충 학습 자료</p>
+            </button>
+        </div>
+    </main>
+
+    <!-- [화면 3] 숙제 제출 리스트 -->
+    <div id="screen-homework" class="hidden-screen flex-1 p-5 max-w-4xl mx-auto w-full fade-in pb-24">
+        <button onclick="navTo('main')" class="flex items-center gap-1 text-gray-400 text-sm mb-6 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> 메인으로
+        </button>
+        <div class="flex justify-between items-end mb-6">
+            <div><span id="hwClassBadge" class="px-2 py-1 rounded text-xs font-bold mb-2 inline-block border"></span><h2 class="text-2xl font-bold text-white tracking-tight">매일 과제 제출</h2></div>
+            <div class="text-right"><p class="text-xs text-gray-500 mb-1">학습 목표</p><p id="hwTargetText" class="text-sm font-bold text-white"></p></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="my-homework-container"></div>
+    </div>
+
+    <!-- [화면 7] 숙제 현황판 대시보드 -->
+    <div id="screen-dashboard" class="hidden-screen flex-1 p-5 max-w-md mx-auto w-full fade-in pb-20">
+        <button onclick="navTo('main')" class="flex items-center gap-1 text-gray-400 text-sm mb-6 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> 메인으로
+        </button>
+        <div class="mb-5">
+            <h2 class="text-2xl font-bold text-white tracking-tight">학습 현황 대시보드</h2>
+            <p class="text-gray-400 text-sm mt-1">학생의 과제 이행 상태 및 성취도를 확인합니다.</p>
+        </div>
+
+        <div class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3 mb-8 space-y-2.5 shadow-inner">
+            <div class="flex items-start gap-2.5">
+                <span class="text-blue-400 text-sm mt-0.5">💡</span>
+                <p class="text-blue-300 text-[11px] leading-relaxed break-keep font-medium">과제를 갓 제출하셨다면, 우측 상단의 <strong class="text-white">새로고침</strong> 버튼을 눌러야 현황판에 반영됩니다!</p>
+            </div>
+        </div>
+        
+        <h3 class="text-white font-bold text-lg mb-3">📅 날짜별 과제 제출 현황</h3>
+        <p class="text-gray-500 text-xs mb-4">해당 일자(D1, D2 등)를 클릭하면 상세 오답 분석을 볼 수 있습니다.</p>
+        <div id="dash-completion-container" class="space-y-4 mb-8"></div>
+
+        <div id="dash-accuracy-wrapper" class="hidden">
+            <h3 class="text-white font-bold text-lg mb-3 pt-4 border-t border-gray-800">📊 나의 정답률 분석</h3>
+            <div class="flex gap-4 mb-4">
+                <div class="bg-blue-900/20 border border-blue-500/30 p-5 rounded-2xl flex-1 text-center shadow-inner">
+                    <div class="text-blue-400 text-xs font-bold mb-1">전체 누적 정답률</div>
+                    <div class="text-3xl font-black text-white" id="dash-total-accuracy">0%</div>
+                </div>
+            </div>
+            <div class="bg-[#1E1E1E] p-5 rounded-2xl border border-gray-800">
+                <h4 class="text-gray-400 text-xs font-bold mb-4">단원별 정답률</h4>
+                <div id="dash-topic-container" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [화면 4] 주간 리포트 -->
+    <div id="screen-report" class="hidden-screen flex-1 p-5 max-w-md mx-auto w-full fade-in pb-20">
+        <button onclick="navTo('main')" class="flex items-center gap-1 text-gray-400 text-sm mb-6 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> 메인으로
+        </button>
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-white tracking-tight">주간 학습 리포트</h2>
+            <p class="text-gray-400 text-sm mt-1">매주 업데이트되는 학생 맞춤형 분석 자료입니다.</p>
+        </div>
+        <div id="reportListContainer" class="space-y-4"></div>
+    </div>
+
+    <!-- [화면 5] 스케줄 -->
+    <div id="screen-schedule" class="hidden-screen flex-1 p-5 max-w-md mx-auto w-full fade-in">
+        <button onclick="navTo('main')" class="flex items-center gap-1 text-gray-400 text-sm mb-6 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> 메인으로
+        </button>
+        <h2 class="text-2xl font-bold text-white mb-6">나의 수업 스케줄</h2>
+        <div class="relative pl-4 space-y-6" id="scheduleListContainer"></div>
+    </div>
+    
+    <!-- [화면 6] 게시판 -->
+    <div id="screen-board" class="hidden-screen flex-1 p-5 max-w-md mx-auto w-full fade-in">
+        <button onclick="navTo('main')" class="flex items-center gap-1 text-gray-400 text-sm mb-6 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> 메인으로
+        </button>
+        <h2 class="text-2xl font-bold text-white mb-6">알림 & 자료실</h2>
+        <div class="space-y-3" id="boardListContainer"></div>
+    </div>
+
+    <!-- ==========================================
+         [모달 영역]
+    =========================================== -->
+    
+    <!-- 현황판 상세 조회 모달 -->
+    <div id="dashboardDetailModal" class="fixed inset-0 bg-black/90 z-[90] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target === this) closeDashboardDetailModal()">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl flex flex-col animate-fade-in-up">
+            <div class="flex justify-between items-start mb-4 border-b border-gray-800 pb-3">
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-1" id="dashModalTitle">상세 내역</h3>
+                    <p class="text-gray-400 text-xs" id="dashModalDate">-</p>
+                </div>
+                <button onclick="closeDashboardDetailModal()" class="text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-full p-1.5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="dashModalContent" class="space-y-4"></div>
+            <button onclick="closeDashboardDetailModal()" class="w-full mt-6 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors border border-gray-700 shadow-lg text-sm">닫기</button>
+        </div>
+    </div>
+
+    <!-- 리포트 인포그래픽 모달 -->
+    <div id="reportDetailModal" class="fixed inset-0 bg-black/95 z-[100] hidden flex items-center justify-center p-0 md:p-4 backdrop-blur-md transition-opacity duration-300">
+        <div class="bg-[#191919] w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-3xl shadow-2xl flex flex-col relative overflow-hidden animate-fade-in-up">
+            <div class="bg-gradient-to-br from-blue-900/40 via-[#191919] to-purple-900/20 p-6 border-b border-gray-800 flex-shrink-0 relative">
+                <div class="absolute top-0 right-0 p-4">
+                    <button onclick="closeReportDetailModal()" class="text-gray-400 hover:text-white bg-gray-800/50 rounded-full p-1.5 backdrop-blur-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-1 rounded border border-blue-500/30" id="detReportBadge">Signature Report</div>
+                    <span class="text-gray-400 text-sm font-medium" id="detReportWeek"></span>
+                </div>
+                <h3 class="text-2xl font-black text-white tracking-tight">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600" id="detReportName"></span> 학생 분석
+                </h3>
+            </div>
+            
+            <div class="overflow-y-auto flex-grow p-6 space-y-6 pb-20 custom-scrollbar">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-[#121212] p-4 rounded-2xl border border-gray-800 flex flex-col justify-center items-center text-center shadow-inner">
+                        <span class="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-widest">정규수업 출결</span>
+                        <div class="text-xl font-black text-white" id="detReportAttend"></div>
+                    </div>
+                    <div class="bg-[#121212] p-4 rounded-2xl border border-gray-800 flex flex-col justify-center items-center text-center shadow-inner">
+                        <span class="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-widest">수업 태도</span>
+                        <div class="text-xl font-black text-blue-400" id="detReportAttitude"></div>
+                    </div>
+                </div>
+                
+                <div class="bg-[#121212] p-5 rounded-2xl border border-gray-800">
+                    <div class="flex justify-between items-end mb-3">
+                        <span class="text-sm font-bold text-gray-300 flex items-center gap-1.5"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg> 과제 수행률</span>
+                        <span class="text-2xl font-black text-green-400" id="detReportHwText">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-800 rounded-full h-3.5 shadow-inner overflow-hidden">
+                        <div id="detReportHwBar" class="bg-gradient-to-r from-green-500 to-emerald-400 h-3.5 rounded-full bar-fill w-0 relative"><div class="absolute top-0 right-0 bottom-0 w-4 bg-white/30 rounded-full blur-[2px]"></div></div>
+                    </div>
+                </div>
+                
+                <div class="bg-[#121212] p-5 rounded-2xl border border-gray-800">
+                    <span class="text-sm font-bold text-gray-300 mb-5 flex items-center gap-1.5"><svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> 주말 클리닉 테스트 결과</span>
+                    
+                    <div id="detReportTestArea">
+                        <div class="mb-4">
+                            <div class="flex justify-between text-xs mb-1.5"><span class="text-yellow-400 font-bold">학생 점수</span><span class="text-yellow-400 font-black text-sm" id="detReportMyScoreText">0점</span></div>
+                            <div class="w-full bg-gray-800 rounded-full h-4 shadow-inner overflow-hidden"><div id="detReportMyScoreBar" class="bg-gradient-to-r from-yellow-600 to-yellow-400 h-4 rounded-full bar-fill w-0 relative"><div class="absolute top-0 right-0 bottom-0 w-3 bg-white/40 rounded-full blur-[1px]"></div></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">반 평균</span><span class="text-gray-400" id="detReportAvgScoreText">0점</span></div>
+                            <div class="w-full bg-gray-800/50 rounded-full h-1.5 overflow-hidden"><div id="detReportAvgScoreBar" class="bg-gray-600 h-1.5 rounded-full bar-fill w-0"></div></div>
+                        </div>
+                        
+                        <div class="mt-6 pt-5 border-t border-gray-800">
+                            <div class="flex bg-[#191919] rounded-lg p-1 mb-4 border border-gray-700">
+                                <button id="repTabWrong" onclick="switchReportTab('wrong')" class="flex-1 py-2 text-[11px] font-bold rounded-md bg-red-500/20 text-red-400 transition-all shadow-sm">🔍 취약점 (오답)</button>
+                                <button id="repTabCorrect" onclick="switchReportTab('correct')" class="flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-gray-300 transition-all">🎯 나의 강점 (정답)</button>
+                            </div>
+                            
+                            <div id="detReportAnalysisList" class="space-y-2"></div>
+                            <div id="detReportCorrectList" class="space-y-2 hidden"></div>
+                        </div>
+                    </div>
+
+                    <div id="detReportNoTestArea" class="hidden flex flex-col items-center justify-center py-6 bg-[#191919] rounded-xl border border-gray-800">
+                        <span class="text-3xl mb-2">🚫</span>
+                        <span class="text-gray-400 font-bold text-sm">이번 주 클리닉 테스트 미응시</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-[#121212] p-4 rounded-xl border border-gray-800"><span class="text-[11px] font-bold text-gray-500 mb-2 block uppercase tracking-wider">정규수업 특이사항</span><p class="text-sm text-gray-300 leading-relaxed break-keep" id="detReportNotes"></p></div>
+                    <div class="bg-blue-900/10 p-5 rounded-2xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.05)] relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div><span class="text-sm font-black text-blue-400 mb-2 flex items-center gap-2"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg> 주간 학습 총평</span><p class="text-sm text-gray-200 leading-relaxed font-medium break-keep whitespace-pre-wrap" id="detReportReview"></p></div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-800 bg-[#191919] flex-shrink-0 absolute bottom-0 w-full md:relative"><button onclick="closeReportDetailModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg border border-gray-700">리포트 닫기</button></div>
+        </div>
+    </div>
+
+    <!-- 숙제 제출 폼 모달 -->
+    <div id="taskModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target === this) closeTaskModal()">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl animate-fade-in-up flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-start mb-4 border-b border-gray-700 pb-4 flex-shrink-0">
+                <div><h3 id="modalDateTitle" class="text-xl font-bold text-white"></h3><p id="modalRangeDesc" class="text-sm text-gray-400 mt-1 font-medium"></p></div>
+                <button onclick="closeTaskModal()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="space-y-4 mb-5 overflow-y-auto flex-grow pr-1 custom-scrollbar">
+                <div class="flex items-center justify-between bg-[#121212] p-3 rounded-lg border border-gray-800">
+                    <span class="text-gray-300 font-bold text-sm">진행 상태</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="modalStatusCheck" class="sr-only peer">
+                      <div id="modalToggleBg" class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      <span id="modalStatusText" class="ml-3 text-sm font-bold text-gray-400">미완료</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-bold text-sm mb-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <div class="flex items-center gap-2"><span class="bg-yellow-500/20 text-yellow-500 p-1 rounded">❓</span>오답/질문 문항 <span class="text-xs text-gray-500 font-normal">(영상/손풀이 매칭)</span></div>
+                    </label>
+                    <div id="modalQsContainer" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-[#121212] border border-gray-700 rounded-lg custom-scrollbar"></div>
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-bold text-sm mb-2 flex items-center justify-between">
+                        <div class="flex items-center gap-2"><span class="bg-purple-500/20 text-purple-500 p-1 rounded">📸</span>숙제 인증 사진 <span class="text-xs text-gray-500 font-normal">(서버 전송)</span></div>
+                    </label>
+                    <!-- 최초 업로드 버튼 -->
+                    <div id="photoUploadBtn" onclick="document.getElementById('modalPhotoInput').click()" class="border-2 border-dashed border-gray-600 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-800 transition-colors">
+                        <span class="text-sm font-bold text-gray-300">카메라 촬영 또는 앨범 선택 <span class="text-purple-400">(다중 선택)</span></span>
+                    </div>
+                    <input type="file" id="modalPhotoInput" accept="image/*" multiple class="hidden" onchange="handlePhotoSelection(event)">
+                    
+                    <!-- 선택 후 미리보기 컨테이너 -->
+                    <div id="photoPreviewContainer" class="hidden mt-2 p-3 bg-[#121212] border border-gray-700 rounded-lg">
+                        <div id="photoGrid" class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar"></div>
+                        <div class="flex justify-between items-center mt-2 border-t border-gray-800 pt-2">
+                            <div id="photoCountText" class="text-green-400 text-xs font-bold"></div>
+                            <div class="flex gap-3">
+                                <button onclick="document.getElementById('modalPhotoInput').click()" class="text-blue-400 hover:text-blue-300 text-xs font-bold transition-colors">➕ 추가하기</button>
+                                <button onclick="removePhoto()" class="text-gray-400 hover:text-red-400 text-xs font-bold transition-colors">🗑️ 지우기</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-bold text-sm mb-2 flex items-center gap-2"><span class="bg-green-500/20 text-green-500 p-1 rounded">📝</span>추가 코멘트</label>
+                    <textarea id="modalMemoInput" rows="2" class="w-full bg-[#121212] border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="어려웠던 부분이나 메모를 남겨주세요"></textarea>
+                </div>
+            </div>
+            
+            <!-- 하단 액션 버튼부 -->
+            <div class="flex flex-col gap-3 flex-shrink-0 pt-2 relative">
+                <div id="loadingOverlay" class="absolute inset-0 bg-[#1E1E1E]/90 backdrop-blur-sm z-10 hidden flex-col items-center justify-center rounded-xl">
+                    <svg class="animate-spin h-6 w-6 text-yellow-500 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-xs font-bold text-yellow-500">데이터를 안전하게 전송 중입니다...</span>
+                </div>
+                <button onclick="submitDataAndCopy()" class="w-full bg-[#FEE500] hover:bg-[#E5CF00] text-[#191919] font-bold py-3.5 rounded-xl transition-colors shadow-lg">제출하기</button>
+                
+                <div class="flex gap-2">
+                    <button onclick="saveAndCloseTaskModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3.5 rounded-xl border border-gray-700 transition-colors text-sm">임시 저장하고 닫기</button>
+                    <button onclick="resetTaskSelections()" class="w-1/3 bg-red-900/20 hover:bg-red-900/40 text-red-400 font-bold py-3.5 rounded-xl border border-red-500/30 transition-colors text-sm whitespace-nowrap">초기화</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 초기화 재확인용 커스텀 모달 -->
+    <div id="resetConfirmModal" class="fixed inset-0 bg-black/90 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target === this) closeResetConfirmModal()">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl flex flex-col animate-fade-in-up">
+            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">초기화하시겠습니까?</h3>
+            <p class="text-gray-400 text-sm mb-6 leading-relaxed">체크한 문항, 사진, 코멘트가 모두 지워지며<br>이 작업은 되돌릴 수 없습니다.</p>
+            <div class="flex gap-2">
+                <button onclick="closeResetConfirmModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors border border-gray-700 shadow-sm text-sm">취소</button>
+                <button onclick="executeResetTask()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg text-sm">초기화 진행</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 제출 성공 및 영상 복습 모달 -->
+    <div id="customAlertModal" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20 flex-shrink-0">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">제출 완료!</h3>
+            
+            <div id="videoLinksWrapper" class="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 my-4 hidden text-left flex-shrink-0">
+                <p class="text-blue-400 text-sm font-bold mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    내가 질문한 문항 해설영상
+                </p>
+                <div id="videoLinksContainer" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar"></div>
+            </div>
+
+            <p class="text-gray-400 text-sm mb-4 leading-relaxed mt-2">
+                숙제 데이터와 사진이 서버에 안전하게 저장되었습니다.<br>지금 바로 해설 영상을 시청하며 복습해 보세요!
+            </p>
+            
+            <div class="flex flex-col gap-2 flex-shrink-0">
+                <button onclick="closeCustomAlert()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors border border-gray-700 shadow-lg mt-2">
+                    확인 (창 닫기)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 일반/시스템 에러 안내 모달 -->
+    <div id="submitErrorModal" class="fixed inset-0 bg-black/90 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl flex flex-col animate-fade-in-up">
+            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2" id="errorTitle">오류 안내</h3>
+            <p id="errorMessage" class="text-gray-400 text-sm mb-6 leading-relaxed">문제가 발생했습니다.</p>
+            <button onclick="closeErrorModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors border border-gray-700 shadow-lg">확인</button>
+        </div>
+    </div>
+
+    <!-- 로그인 에러 모달 -->
+    <div id="loginErrorModal" class="fixed inset-0 bg-black/90 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl flex flex-col animate-fade-in-up">
+            <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">로그인 실패</h3>
+            <p id="loginErrorMessage" class="text-gray-400 text-sm mb-6 leading-relaxed">아이디 또는 비밀번호가 일치하지 않습니다.</p>
+            <button onclick="closeLoginErrorModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl transition-colors border border-gray-700 shadow-lg">다시 시도하기</button>
+        </div>
+    </div>
+
+    <!-- 영상 시청 모달 -->
+    <div id="videoModal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target === this) closeVideoModal()">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-3xl w-full p-4 shadow-2xl flex flex-col animate-fade-in-up">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-3 flex-shrink-0">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">▶ 영상 시청</h3>
+                <button onclick="closeVideoModal()" class="text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-full p-1"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="w-full aspect-video bg-black rounded-lg border border-gray-800 overflow-hidden relative mb-3">
+                <div id="videoLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-[#121212] z-0">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-gray-400 text-sm font-bold">로딩 중...</span>
+                </div>
+                <iframe id="videoIframe" src="" class="w-full h-full absolute inset-0 z-10 border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen onload="document.getElementById('videoLoading').classList.add('hidden');"></iframe>
+            </div>
+            <button onclick="goFullscreen()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-[0_0_15px_rgba(37,99,235,0.3)] text-sm flex justify-center items-center gap-2 mb-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                전체화면으로 크게 보기 (가로 모드)
+            </button>
+            <a id="videoFallbackLink" href="#" target="_blank" class="text-center w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl transition-colors border border-gray-600 text-sm flex justify-center items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                화면이 안 나오나요? (유튜브 앱에서 열기)
+            </a>
+        </div>
+    </div>
+    
+    <!-- 손풀이 모달 -->
+    <div id="handwrittenModal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="if(event.target === this) closeHandwrittenModal()">
+        <div class="bg-[#1E1E1E] border border-gray-700 rounded-2xl max-w-2xl w-full p-4 shadow-2xl flex flex-col h-[80vh] animate-fade-in-up">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-3 flex-shrink-0">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">📝 손풀이 해설</h3>
+                <button onclick="closeHandwrittenModal()" class="text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-full p-1"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="flex-grow w-full bg-[#121212] rounded-lg border border-gray-800 overflow-hidden relative min-h-[300px]">
+                <div id="handwrittenLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-[#121212] z-0">
+                    <svg class="animate-spin h-8 w-8 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-gray-400 text-sm font-bold">자료를 불러오는 중입니다...</span>
+                </div>
+                <iframe id="handwrittenIframe" src="" class="w-full h-full absolute inset-0 z-10 border-0" onload="document.getElementById('handwrittenLoading').classList.add('hidden');"></iframe>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // ==========================================
+        // 1. 보안이 적용된 통신 세팅
+        // ==========================================
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4goHVoKhC0u4Ixwa4a7PccPBfteAOZqnlAipBCjLZbZ1zEeIpTa3peBtcKyL3QW61ZQ/exec"; 
+        const APP_SECRET_KEY = "Signature2026!@";
+
+        let globalDB = {}; 
+        let publicData = null; 
+        let currentUser = null;
+        let windowReportsData = []; 
+
+        const taskStore = {};
+        let currentTask = { id: '', date: '', range: '', className: '', checkClass: '', themeName: 'blue' };
+        let currentSelectedQs = new Set();
+        let selectedPhotos = [];
+
+        const themeMapper = {
+            blue: { badge: "bg-blue-500/20 text-blue-400 border-blue-500/30", text: "text-blue-400", bg: "bg-blue-500", check: "checked-blue", toggle: "peer-checked:bg-blue-500" },
+            red: { badge: "bg-red-500/20 text-red-400 border-red-500/30", text: "text-red-400", bg: "bg-red-500", check: "checked-red", toggle: "peer-checked:bg-red-500" },
+            green: { badge: "bg-green-500/20 text-green-400 border-green-500/30", text: "text-green-400", bg: "bg-green-500", check: "checked-green", toggle: "peer-checked:bg-green-500" },
+            purple: { badge: "bg-purple-500/20 text-purple-400 border-purple-500/30", text: "text-purple-400", bg: "bg-purple-500", check: "checked-purple", toggle: "peer-checked:bg-purple-500" },
+            yellow: { badge: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", text: "text-yellow-400", bg: "bg-yellow-500", check: "checked-yellow", toggle: "peer-checked:bg-yellow-500" }
+        };
+
+        function normalizeKey(str) { return str ? String(str).replace(/\s+/g, '') : ''; }
+
+        // HTML 태그 방어용 소독기 (XSS 방어)
+        function escapeHTML(str) {
+            if(!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m];
+            });
+        }
+
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fetchDatabase); } 
+        else { fetchDatabase(); }
+
+        // ==========================================
+        // 2. 통신 및 라우팅 엔진
+        // ==========================================
+        
+        async function fetchDatabase() {
+            document.getElementById('screen-splash').classList.remove('hidden-screen');
+            const splashText = document.getElementById('splash-text');
+            
+            const maxRetries = 3;       
+            const timeoutMs = 20000;    
+            const retryDelayMs = 2000;  
+            
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    if (attempt > 1 && splashText) {
+                        splashText.innerHTML = `네트워크 지연... 자동 재연결 중입니다 <br><span class="text-yellow-500 text-xs mt-1 inline-block">(${attempt}/${maxRetries}회 시도)</span>`;
+                    }
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                    
+                    const fetchUrl = GOOGLE_SCRIPT_URL + "?appKey=" + encodeURIComponent(APP_SECRET_KEY) + "&t=" + new Date().getTime();
+                    
+                    const response = await fetch(fetchUrl, { 
+                        method: 'GET',
+                        mode: 'cors',
+                        redirect: 'follow',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) throw new Error("HTTP 오류: " + response.status);
+                    
+                    const parsedData = await response.json(); 
+                    if (parsedData.error || parsedData.success === false) {
+                        throw new Error(parsedData.reason || "보안 인증 실패");
+                    }
+                    
+                    publicData = parsedData.data;
+                    if (splashText) splashText.textContent = '로그인 정보 확인 중...';
+                    
+                    await checkAutoLogin();
+                    return; 
+                } catch (error) {
+                    console.error(`Fetch Attempt ${attempt} Error:`, error);
+                    if (attempt === maxRetries) {
+                        document.getElementById('screen-splash').classList.add('hidden-screen');
+                        showError("서버 연결 실패", "인터넷 연결이 불안정하거나 서버 응답이 지연되고 있습니다.<br>잠시 후 새로고침해 주세요.");
+                        return; 
+                    }
+                    await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+                }
+            }
+        }
+
+        async function checkAutoLogin() {
+            const savedId = localStorage.getItem('sig_id');
+            const savedToken = localStorage.getItem('sig_token');
+            const oldPlainPw = localStorage.getItem('signature_pw'); 
+            if (oldPlainPw) localStorage.removeItem('signature_pw');
+
+            if (!publicData) { showScreenOnly('login'); return; }
+
+            if (savedId && savedToken) {
+                try {
+                    const payload = { appKey: APP_SECRET_KEY, action: 'login', id: savedId, pwHash: savedToken };
+                    const res = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                    const json = await res.json();
+                    
+                    if (json.success) {
+                        currentUser = json.user;
+                        globalDB = { ...publicData, ...json.privateData };
+                        applyLoginState();
+                        showScreenOnly('main');
+                        history.replaceState({ screen: 'main' }, "", "#main");
+                        document.getElementById('screen-splash').classList.add('hidden-screen');
+                        return;
+                    } else {
+                        localStorage.removeItem('sig_id');
+                        localStorage.removeItem('sig_token');
+                    }
+                } catch(e) {
+                    console.error("Auto Login Error:", e);
+                }
+            }
+            
+            document.getElementById('screen-splash').classList.add('hidden-screen');
+            showScreenOnly('login');
+            history.replaceState({ screen: 'login' }, "", "#login");
+        }
+
+        async function tryLogin() {
+            const id = document.getElementById('loginId').value.trim();
+            const pw = document.getElementById('loginPw').value.trim();
+            if (!publicData) return showError("데이터 로드 실패", "서버 통신이 원활하지 않습니다. 앱을 새로고침 후 다시 시도해주세요.");
+            if (!id || !pw) return showError("입력 오류", "아이디와 비밀번호를 모두 입력해주세요.");
+            
+            const btn = document.getElementById('btnLogin');
+            const originalBtnText = btn.textContent;
+            btn.textContent = "검증 중..."; btn.disabled = true;
+
+            try {
+                const pwHash = await getSHA256Hash(pw + APP_SECRET_KEY);
+                const payload = { appKey: APP_SECRET_KEY, action: 'login', id: id, pwHash: pwHash };
+                
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    currentUser = json.user;
+                    globalDB = { ...publicData, ...json.privateData };
+                    
+                    localStorage.setItem('sig_id', currentUser.id);
+                    localStorage.setItem('sig_token', pwHash); 
+                    
+                    applyLoginState();
+                    navTo('main');
+                } else {
+                    showError("로그인 실패", json.reason || "아이디 또는 비밀번호가 일치하지 않습니다.");
+                }
+            } catch(e) {
+                console.error("로그인 에러:", e);
+                showError("통신 에러", "로그인 요청 중 문제가 발생했습니다.");
+            } finally {
+                btn.textContent = originalBtnText; btn.disabled = false;
+            }
+        }
+
+        async function getSHA256Hash(text) {
+            const msgBuffer = new TextEncoder().encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function refreshData() {
+            await fetchDatabase(); 
+        }
+
+        function applyLoginState() {
+            document.getElementById('app-header').classList.remove('hidden-screen');
+            document.getElementById('userName').textContent = escapeHTML(currentUser.name);
+            
+            const badge = document.getElementById('userBadge');
+            const classInfo = document.getElementById('userClassInfo');
+            const userClass = currentUser.className || '';
+            const userClassSettings = (globalDB.settings && globalDB.settings[userClass]) ? globalDB.settings[userClass] : { theme: 'blue' };
+            const tData = themeMapper[userClassSettings.theme] || themeMapper['blue'];
+
+            const userRole = currentUser.role ? String(currentUser.role).trim() : '';
+
+            if (userRole === '학생') {
+                badge.textContent = "👨‍🎓 학생 계정";
+                badge.className = `inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-2 border ${tData.badge}`;
+                classInfo.textContent = `소속: ${escapeHTML(currentUser.className)}`;
+                document.getElementById('menu-homework').classList.remove('hidden');
+            } else {
+                badge.textContent = "👪 학부모 계정";
+                badge.className = `inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-2 border ${tData.badge}`;
+                
+                let childNameStr = currentUser.childName ? currentUser.childName : "자녀"; 
+                classInfo.textContent = `자녀: ${escapeHTML(childNameStr)} 학생 (${escapeHTML(currentUser.className)})`;
+                document.getElementById('menu-homework').classList.add('hidden');
+            }
+            document.getElementById('menu-board').classList.remove('hidden');
+
+            renderBoard(); 
+            renderSchedule(); 
+            renderReports();
+            if (userRole === '학생') renderHomeworkList();
+            renderDashboard(); 
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('sig_id');
+            localStorage.removeItem('sig_token');
+            document.getElementById('loginId').value = '';
+            document.getElementById('loginPw').value = '';
+            document.getElementById('app-header').classList.add('hidden-screen');
+            
+            showScreenOnly('login');
+            history.pushState({ screen: 'login' }, "", "#login");
+        }
+
+        const screens = ['login', 'main', 'homework', 'report', 'schedule', 'board', 'dashboard'];
+        function showScreenOnly(targetScreen) {
+            screens.forEach(s => {
+                const el = document.getElementById(`screen-${s}`);
+                if (el) el.classList.add('hidden-screen');
+            });
+            const targetEl = document.getElementById(`screen-${targetScreen}`);
+            if (targetEl) targetEl.classList.remove('hidden-screen');
+            window.scrollTo(0,0);
+        }
+
+        function navTo(targetScreen) {
+            showScreenOnly(targetScreen);
+            history.pushState({ screen: targetScreen }, "", "#" + targetScreen);
+        }
+
+        window.addEventListener('popstate', (e) => {
+            closeTaskModal(); closeErrorModal(); closeHandwrittenModal(); closeVideoModal();
+            closeReportDetailModal(); closeDashboardDetailModal(); closeCustomAlert(); closeResetConfirmModal();
+
+            if (e.state && e.state.screen) showScreenOnly(e.state.screen);
+            else showScreenOnly(currentUser ? 'main' : 'login');
+        });
+
+        // ==========================================
+        // 3. UI 렌더링 로직
+        // ==========================================
+        function renderBoard() {
+            const container = document.getElementById('boardListContainer');
+            container.innerHTML = '';
+            if(!globalDB.board || globalDB.board.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-sm text-center py-10">게시물이 없습니다.</p>`; return;
+            }
+            const myClass = currentUser.className;
+            const filteredBoard = globalDB.board.filter(post => {
+                const target = post.targetClass ? post.targetClass.trim() : "";
+                return target === "" || target === "전체" || target === myClass;
+            });
+            if(filteredBoard.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-sm text-center py-10">등록된 게시물이 없습니다.</p>`; return;
+            }
+            
+            [...filteredBoard].reverse().forEach(post => {
+                const color = post.category === '공지' ? 'red' : 'purple';
+                const safeDate = escapeHTML(post.date);
+                const safeCategory = escapeHTML(post.category);
+                const safeTitle = escapeHTML(post.title);
+                const safeContent = escapeHTML(post.content);
+                const safeLink = post.link ? encodeURI(post.link) : '';
+
+                let linkHtml = safeLink ? `
+                    <div class="mt-3 pt-3 border-t border-gray-700">
+                        <button onclick="window.open('${safeLink}', '_blank')" class="w-full flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-blue-400 text-xs font-bold py-2.5 rounded-lg transition-colors border border-gray-600 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            첨부자료 열기
+                        </button>
+                    </div>` : '';
+                container.innerHTML += `
+                    <div class="bg-[#1E1E1E] p-4 rounded-xl border border-gray-700 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-bold bg-${color}-500/20 text-${color}-400 px-2 py-0.5 rounded">${safeCategory}</span>
+                            <span class="text-gray-500 text-xs">${safeDate}</span>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-1">${safeTitle}</h3>
+                        <p class="text-gray-400 text-xs leading-relaxed whitespace-pre-wrap">${safeContent}</p>
+                        ${linkHtml}
+                    </div>`;
+            });
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('scheduleListContainer');
+            container.innerHTML = '<div class="absolute left-[7px] top-4 bottom-2 w-0.5 bg-gray-700"></div>';
+            const targetClass = currentUser.className;
+            const mySchedule = (globalDB.schedule || []).filter(s => s.className === targetClass);
+
+            if(mySchedule.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-sm text-center py-10">스케줄이 없습니다.</p>`; return;
+            }
+            const userClassSettings = (globalDB.settings && globalDB.settings[targetClass]) ? globalDB.settings[targetClass] : { theme: 'blue' };
+            const tData = themeMapper[userClassSettings.theme] || themeMapper['blue'];
+            const userRole = currentUser.role ? String(currentUser.role).trim() : '';
+
+            mySchedule.forEach(sched => {
+                let videoBtnHtml = '';
+                const safeLink = sched.link ? encodeURI(sched.link) : '';
+                if (safeLink && userRole === '학생') {
+                    videoBtnHtml = `
+                        <div class="mt-3 pt-3 border-t border-gray-800">
+                            <button onclick="openVideoModal('${safeLink}')" class="w-full flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-yellow-400 text-xs font-bold py-2.5 rounded-lg transition-colors shadow-sm">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm-2 14.5v-9l7 4.5-7 4.5z"/></svg>
+                                수업 영상 보러가기
+                            </button>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML += `
+                    <div class="relative pl-6">
+                        <div class="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-gray-800 border-4 border-[#121212] z-10 flex items-center justify-center">
+                            <div class="w-1.5 h-1.5 ${tData.bg} rounded-full"></div>
+                        </div>
+                        <div class="bg-[#1E1E1E] p-4 rounded-xl border border-gray-800">
+                            <span class="text-xs font-bold text-gray-400 mb-1 block">${escapeHTML(sched.date)} · ${escapeHTML(sched.time)}</span>
+                            <h3 class="text-white font-bold text-sm">${escapeHTML(sched.content)}</h3>
+                            ${videoBtnHtml}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function getMyHomeworkCompletion() {
+            const hwCompletion = {};
+            const myLogs = globalDB.hwLogs || [];
+            myLogs.forEach(log => {
+                if (log.date) {
+                    const key = normalizeKey(log.date);
+                    hwCompletion[key] = log;
+                }
+            });
+            return hwCompletion;
+        }
+
+        function renderDashboard() {
+            const completionContainer = document.getElementById('dash-completion-container');
+            const accuracyContainer = document.getElementById('dash-topic-container');
+            const accuracyWrapper = document.getElementById('dash-accuracy-wrapper');
+            
+            completionContainer.innerHTML = '';
+            accuracyContainer.innerHTML = '';
+
+            const userRole = currentUser.role ? String(currentUser.role).trim() : '';
+            const targetClass = currentUser.className;
+            const myHomework = (globalDB.homework || []).filter(h => h.className === targetClass);
+            
+            if(myHomework.length === 0) {
+                completionContainer.innerHTML = `<p class="text-gray-500 text-sm text-center py-6 bg-[#1E1E1E] rounded-xl border border-gray-800">등록된 과제 일정이 없습니다.</p>`;
+                return;
+            }
+
+            const hwCompletion = getMyHomeworkCompletion();
+            const hwByWeek = {};
+            myHomework.forEach(item => { 
+                if(!hwByWeek[item.week]) hwByWeek[item.week] = []; 
+                hwByWeek[item.week].push(item); 
+            });
+
+            let totalQ = 0, totalW = 0;
+            const topicStats = {};
+
+            Object.keys(hwByWeek).sort((a,b) => parseInt(a) - parseInt(b)).forEach(week => {
+                let weekHtml = `<div class="bg-[#1E1E1E] p-4 rounded-2xl border border-gray-800 shadow-sm mb-4"><h4 class="text-white font-bold text-sm mb-3 flex items-center gap-2"><span class="w-1 h-3 bg-yellow-500 rounded-full"></span>${week}주차</h4><div class="flex justify-between gap-1 items-start">`;
+
+                hwByWeek[week].forEach((item, index) => {
+                    const dayNum = index + 1;
+                    const searchKey = `${week}주차 D${dayNum} (${item.date})`;
+                    const log = hwCompletion[normalizeKey(searchKey)];
+                    const isSubmitted = log && log.status === '완료';
+
+                    let circleClass = isSubmitted ? "bg-yellow-500 text-[#121212] shadow-[0_0_10px_rgba(234,179,8,0.4)] border-transparent" : "bg-[#121212] text-gray-600 border-gray-700";
+                    let statusBadge = isSubmitted ? `<span class="mt-1 text-[10px] text-green-400 font-bold bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20">제출완료</span>` : `<span class="mt-1 text-[10px] text-gray-500 font-bold">미제출</span>`;
+
+                    const safeRange = escapeHTML(item.range).replace(/'/g, "\\'");
+                    const safeDate = escapeHTML(item.date).replace(/'/g, "\\'");
+                    const logQs = log && log.questions ? escapeHTML(log.questions).replace(/'/g, "\\'").replace(/\n/g, " ") : '없음';
+                    const args = `'${week}', ${dayNum}, '${safeDate}', ${isSubmitted}, '${logQs}', '${safeRange}', ${parseInt(item.count) || 0}`;
+
+                    weekHtml += `<div class="flex-1 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform" onclick="openDashboardDetailModal(${args})"><div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border ${circleClass} transition-all flex-shrink-0">D${dayNum}</div><span class="text-[10px] text-gray-400 mt-1.5 font-medium">${item.date.split('(')[0]}</span>${statusBadge}</div>`;
+
+                    if (isSubmitted) {
+                        const count = parseInt(item.count) || 0;
+                        totalQ += count;
+                        let wCount = 0;
+                        if (log.questions && log.questions !== '없음') wCount = log.questions.split(',').length;
+                        totalW += wCount;
+
+                        const topicMatch = item.range.match(/\d+\.[가-힣A-Za-z]+/);
+                        const topic = topicMatch ? topicMatch[0] : "종합 단원";
+
+                        if (!topicStats[topic]) topicStats[topic] = { total: 0, wrong: 0 };
+                        topicStats[topic].total += count;
+                        topicStats[topic].wrong += wCount;
+                    }
+                });
+
+                weekHtml += `</div></div>`;
+                completionContainer.innerHTML += weekHtml;
+            });
+
+            if (userRole === '학생') {
+                accuracyWrapper.classList.remove('hidden');
+                let totalAccuracy = totalQ > 0 ? Math.round(((totalQ - totalW) / totalQ) * 100) : 0;
+                document.getElementById('dash-total-accuracy').textContent = `${totalAccuracy}%`;
+
+                let topicHtml = '';
+                const topics = Object.keys(topicStats).sort();
+                
+                if (topics.length === 0) {
+                    topicHtml = '<p class="text-gray-500 text-xs text-center py-2">제출 완료된 과제가 없습니다.</p>';
+                } else {
+                    topics.forEach(topic => {
+                        const stats = topicStats[topic];
+                        const acc = stats.total > 0 ? Math.round(((stats.total - stats.wrong) / stats.total) * 100) : 0;
+                        let barColor = "bg-blue-500";
+                        if (acc < 60) barColor = "bg-red-500";
+                        else if (acc < 80) barColor = "bg-yellow-500";
+
+                        topicHtml += `<div><div class="flex justify-between text-xs mb-1.5"><span class="text-gray-300 font-medium">${escapeHTML(topic)}</span><span class="text-white font-bold">${acc}%</span></div><div class="w-full bg-[#121212] rounded-full h-2 shadow-inner border border-gray-800"><div class="${barColor} h-2 rounded-full bar-fill" style="width: ${acc}%"></div></div></div>`;
+                    });
+                }
+                accuracyContainer.innerHTML = topicHtml;
+            } else {
+                accuracyWrapper.classList.add('hidden');
+            }
+        }
+
+        function openDashboardDetailModal(week, dayNum, dateStr, isSubmitted, questions, range, totalCount) {
+            document.getElementById('dashModalTitle').textContent = `${week}주차 D${dayNum} 상세 내역`;
+            document.getElementById('dashModalDate').textContent = dateStr;
+            const content = document.getElementById('dashModalContent');
+            
+            if (!isSubmitted) {
+                content.innerHTML = `<div class="flex flex-col items-center justify-center py-8 text-center bg-[#121212] rounded-xl border border-gray-800"><span class="text-4xl mb-3">🚫</span><p class="text-gray-300 font-bold text-sm">아직 과제를 제출하지 않았습니다.</p></div>`;
+            } else {
+                let qsArr = [];
+                if (questions && questions !== '없음') qsArr = questions.split(',').map(s => s.trim());
+                const wrongCount = qsArr.length;
+                const correctCount = totalCount - wrongCount;
+                
+                let qsHtml = '<div class="text-gray-500 text-xs mt-2 p-2 bg-[#191919] rounded border border-gray-700 text-center">🎉 질문 문항 없음</div>';
+                if (wrongCount > 0) {
+                    qsHtml = `<div class="flex flex-wrap gap-1.5 mt-2">`;
+                    qsArr.forEach(q => { qsHtml += `<span class="bg-red-500/10 text-red-400 px-2 py-1 rounded-md border border-red-500/20 text-xs font-bold shadow-sm">${escapeHTML(q)}번</span>`; });
+                    qsHtml += `</div>`;
+                }
+
+                content.innerHTML = `<div class="bg-[#121212] p-4 rounded-xl border border-gray-800 mb-3 shadow-inner"><div class="text-xs text-gray-500 mb-1 font-bold">학습 범위</div><div class="text-sm font-bold text-gray-200">${range} <span class="text-gray-500 text-xs">(총 ${totalCount}제)</span></div></div><div class="grid grid-cols-2 gap-3 mb-3"><div class="bg-blue-900/10 border border-blue-500/20 rounded-xl p-4 text-center shadow-inner"><div class="text-[11px] text-blue-400 font-bold mb-1">정답 문항</div><div class="text-2xl font-black text-white">${correctCount}개</div></div><div class="bg-red-900/10 border border-red-500/20 rounded-xl p-4 text-center shadow-inner"><div class="text-[11px] text-red-400 font-bold mb-1">오답/질문 문항</div><div class="text-2xl font-black text-white">${wrongCount}개</div></div></div><div class="bg-[#121212] p-4 rounded-xl border border-gray-800 shadow-inner"><div class="flex items-center gap-1.5 text-sm font-bold text-gray-300"><span class="text-red-400">❓</span> 내가 질문한 문항 리스트</div>${qsHtml}</div>`;
+            }
+            document.getElementById('dashboardDetailModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeDashboardDetailModal() { document.getElementById('dashboardDetailModal').classList.add('hidden'); document.body.style.overflow = ''; }
+
+        function renderReports() {
+            const container = document.getElementById('reportListContainer');
+            container.innerHTML = '';
+            const myReports = globalDB.reports || [];
+
+            if(myReports.length === 0) { container.innerHTML = `<p class="text-gray-500 text-sm text-center py-10">발행된 리포트가 없습니다.</p>`; return; }
+
+            windowReportsData = [...myReports].reverse();
+            windowReportsData.forEach((rep, idx) => {
+                let btnHtml = rep.isOld 
+                    ? `<button onclick="window.open('${encodeURI(rep.link)}', '_blank')" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold py-2 px-3 rounded-lg border border-gray-600 transition-colors flex items-center gap-1">기존 링크</button>`
+                    : `<button onclick="openReportDetailModal(${idx})" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-md transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> 분석 보기</button>`;
+
+                const studentNameDisplay = escapeHTML(rep.studentName || currentUser.name);
+                container.innerHTML += `<div class="bg-[#1E1E1E] p-4 md:p-5 rounded-2xl border border-gray-700 flex justify-between items-center mb-3 hover:border-gray-500 transition-colors"><div><span class="text-[11px] text-gray-500 font-bold mb-0.5 block">${studentNameDisplay} 학생</span><h3 class="text-white font-bold text-base md:text-lg">${escapeHTML(rep.week)} 리포트</h3></div>${btnHtml}</div>`;
+            });
+        }
+
+        function switchReportTab(tab) {
+            const btnW = document.getElementById('repTabWrong');
+            const btnC = document.getElementById('repTabCorrect');
+            const listW = document.getElementById('detReportAnalysisList');
+            const listC = document.getElementById('detReportCorrectList');
+
+            if(tab === 'wrong') {
+                btnW.className = "flex-1 py-2 text-[11px] font-bold rounded-md bg-red-500/20 text-red-400 transition-all shadow-sm";
+                btnC.className = "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-gray-300 transition-all";
+                listW.classList.remove('hidden'); listC.classList.add('hidden');
+            } else {
+                btnC.className = "flex-1 py-2 text-[11px] font-bold rounded-md bg-blue-500/20 text-blue-400 transition-all shadow-sm";
+                btnW.className = "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-gray-300 transition-all";
+                listC.classList.remove('hidden'); listW.classList.add('hidden');
+            }
+        }
+
+        function getDiffBadge(level) {
+            let style = "bg-gray-800 text-gray-400 border-gray-700"; 
+            if (level === '하') style = "bg-green-500/20 text-green-400 border-green-500/30";
+            else if (level === '중하') style = "bg-teal-500/20 text-teal-400 border-teal-500/30";
+            else if (level === '중') style = "bg-blue-500/20 text-blue-400 border-blue-500/30";
+            else if (level === '중상') style = "bg-orange-500/20 text-orange-400 border-orange-500/30";
+            else if (level === '상') style = "bg-red-500/20 text-red-400 border-red-500/30";
+            else if (level === '최상') style = "bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30 font-black shadow-[0_0_8px_rgba(217,70,239,0.3)]";
+            return `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${style} ml-1 tracking-widest">${escapeHTML(level)}</span>`;
+        }
+
+        function openReportDetailModal(index) {
+            const data = windowReportsData[index];
+            if (!data) return;
+            
+            document.getElementById('detReportWeek').textContent = data.week;
+            document.getElementById('detReportName').textContent = data.studentName;
+            document.getElementById('detReportAttend').textContent = data.attendance || "-";
+            document.getElementById('detReportAttitude').textContent = data.attitude || "-";
+            document.getElementById('detReportNotes').textContent = data.notes || "특이사항 없음";
+            document.getElementById('detReportReview').textContent = data.review || "작성된 총평이 없습니다.";
+
+            let hwScore = parseInt(data.hwScore) || 0;
+            document.getElementById('detReportHwText').textContent = `${hwScore}%`;
+            setTimeout(() => { document.getElementById('detReportHwBar').style.width = `${hwScore}%`; }, 100);
+
+            const isNoTest = data.testScore === "미응시" || data.wrongAnalysis === "미응시";
+            if (isNoTest) {
+                document.getElementById('detReportTestArea').classList.add('hidden');
+                document.getElementById('detReportNoTestArea').classList.remove('hidden');
+                document.getElementById('detReportMyScoreBar').style.width = '0%';
+                document.getElementById('detReportAvgScoreBar').style.width = '0%';
+            } else {
+                document.getElementById('detReportTestArea').classList.remove('hidden');
+                document.getElementById('detReportNoTestArea').classList.add('hidden');
+                switchReportTab('wrong');
+
+                let myScore = parseInt(data.testScore) || 0;
+                let avgScore = parseInt(data.avgScore) || 0;
+                document.getElementById('detReportMyScoreText').textContent = data.testScore ? `${data.testScore}점` : "-";
+                document.getElementById('detReportAvgScoreText').textContent = data.avgScore ? `${data.avgScore}점` : "-";
+
+                setTimeout(() => { 
+                    document.getElementById('detReportMyScoreBar').style.width = data.testScore ? `${Math.min(myScore, 100)}%` : '0%'; 
+                    document.getElementById('detReportAvgScoreBar').style.width = data.avgScore ? `${Math.min(avgScore, 100)}%` : '0%'; 
+                }, 100);
+
+                const weekDB = globalDB.clinicDB ? globalDB.clinicDB[data.week] : null;
+                const analysisContainer = document.getElementById('detReportAnalysisList');
+                analysisContainer.innerHTML = '';
+                
+                if (data.wrongAnalysis && data.wrongAnalysis.trim() !== '') {
+                    const lines = data.wrongAnalysis.split(/[\n,]+/);
+                    lines.forEach(line => {
+                        if (line.trim() === '') return;
+                        const parts = line.split('/'); 
+                        let qNum, diff, rate, topic, reason;
+
+                        if (parts.length === 2) {
+                            qNum = parts[0].trim(); reason = parts[1].trim();
+                            if (weekDB && weekDB[qNum]) { diff = weekDB[qNum].diff; rate = weekDB[qNum].rate; topic = weekDB[qNum].topic; } 
+                            else { diff = "?"; rate = "?"; topic = "DB 정보 없음"; }
+                        } else if (parts.length >= 5) {
+                            qNum = parts[0].trim(); diff = parts[1].trim(); rate = parts[2].trim(); topic = parts[3].trim(); reason = parts[4].trim();
+                        } else { return; }
+
+                        let reasonColor = "bg-gray-800 text-gray-400 border-gray-700"; 
+                        if (reason.includes("계산")) reasonColor = "bg-red-500/20 text-red-400 border-red-500/30";
+                        else if (reason.includes("해석")) reasonColor = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+                        else if (reason.includes("개념")) reasonColor = "bg-blue-500/20 text-blue-400 border-blue-500/30";
+                        else if (reason.includes("검토") || reason.includes("관리")) reasonColor = "bg-purple-500/20 text-purple-400 border-purple-500/30";
+
+                        analysisContainer.innerHTML += `<div class="bg-[#191919] border border-gray-700 rounded-xl p-3 shadow-sm"><div class="flex justify-between items-center mb-1.5"><div class="flex items-center gap-2"><span class="font-black text-white text-sm">${escapeHTML(qNum)}번</span></div><div class="px-2 py-0.5 rounded text-[10px] font-bold border ${reasonColor}">${escapeHTML(reason)}</div></div><div class="flex flex-wrap gap-2 text-[11px] text-gray-500 mt-1 items-center"><span class="flex items-center">난이도: ${getDiffBadge(diff)}</span><span>|</span><span>정답률: <span class="text-gray-300">${escapeHTML(rate)}</span></span><span>|</span><span class="truncate">단원: <span class="text-gray-300">${escapeHTML(topic)}</span></span></div></div>`;
+                    });
+                } else {
+                    analysisContainer.innerHTML = '<p class="text-gray-500 text-[11px] text-center py-4 bg-[#191919] rounded-lg border border-gray-800">기록된 오답 분석이 없습니다.</p>';
+                }
+
+                const correctContainer = document.getElementById('detReportCorrectList');
+                correctContainer.innerHTML = '';
+                if (data.correctList && data.correctList.trim() !== '') {
+                    const cNums = data.correctList.split(',').map(s=>s.trim()).filter(s=>s);
+                    let correctHtml = '';
+                    cNums.forEach(num => {
+                        let diff = "?", rate = "?", topic = "DB 정보 없음";
+                        if (weekDB && weekDB[num]) { diff = weekDB[num].diff; rate = weekDB[num].rate; topic = weekDB[num].topic; }
+                        correctHtml += `<div class="bg-[#191919] border border-gray-800 rounded-xl p-3 shadow-sm flex justify-between items-center hover:border-blue-500/50 transition-colors"><div><div class="flex items-center gap-2 mb-1"><span class="font-black text-white text-sm">${escapeHTML(num)}번</span><span class="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">정답</span></div><div class="text-[11px] text-gray-500">단원: <span class="text-gray-300">${escapeHTML(topic)}</span></div></div><div class="text-right text-[11px] text-gray-500 space-y-1.5"><div class="flex justify-end items-center">난이도: ${getDiffBadge(diff)}</div><div>정답률: <span class="text-gray-300">${escapeHTML(rate)}</span></div></div></div>`;
+                    });
+                    correctContainer.innerHTML = correctHtml;
+                } else {
+                    correctContainer.innerHTML = '<p class="text-gray-500 text-[11px] text-center py-4 bg-[#191919] rounded-lg border border-gray-800">기록된 정답 데이터가 없습니다.</p>';
+                }
+            }
+            document.getElementById('reportDetailModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeReportDetailModal() {
+            document.getElementById('reportDetailModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            document.getElementById('detReportHwBar').style.width = '0%';
+            document.getElementById('detReportMyScoreBar').style.width = '0%';
+            document.getElementById('detReportAvgScoreBar').style.width = '0%';
+        }
+
+        // ==========================================
+        // 4. 숙제 관리 (제출 및 팝업 제어)
+        // ==========================================
+        function renderHomeworkList() {
+            const container = document.getElementById('my-homework-container');
+            const targetClass = currentUser.className;
+            let classTheme = (globalDB.settings && globalDB.settings[targetClass]) ? globalDB.settings[targetClass].theme : "blue";
+            const tData = themeMapper[classTheme] || themeMapper['blue'];
+
+            document.getElementById('hwClassBadge').textContent = targetClass;
+            document.getElementById('hwClassBadge').className = `px-2 py-1 rounded text-xs font-bold mb-2 inline-block border ${tData.badge}`;
+            document.getElementById('hwTargetText').innerHTML = (globalDB.settings && globalDB.settings[targetClass]) ? escapeHTML(globalDB.settings[targetClass].targetText) : "목표 미설정";
+
+            const myHomework = (globalDB.homework || []).filter(h => h.className === targetClass);
+            if(myHomework.length === 0) {
+                container.innerHTML = `<div class="col-span-1 md:col-span-2 bg-[#1E1E1E] rounded-2xl border border-gray-800 p-10 text-center"><p class="text-gray-500 text-sm">일정이 없습니다.</p></div>`; return;
+            }
+
+            const hwCompletion = getMyHomeworkCompletion();
+            const hwByWeek = {};
+            myHomework.forEach(item => { if(!hwByWeek[item.week]) hwByWeek[item.week] = []; hwByWeek[item.week].push(item); });
+
+            let html = '';
+            const listIconClass = `${tData.text} ${tData.bg}`; 
+
+            Object.keys(hwByWeek).sort((a,b) => parseInt(a) - parseInt(b)).forEach(week => {
+                html += `<div class="bg-[#1E1E1E] rounded-2xl border border-gray-800 p-5 shadow-lg"><h3 class="text-lg font-bold mb-4 text-white border-b border-gray-800 pb-3">${week}주차</h3><div class="space-y-1">`;
+                hwByWeek[week].forEach((item, index) => {
+                    const dayNum = index + 1;
+                    const uniqueId = `hw-w${week}-d${dayNum}`;
+                    const searchKey = `${week}주차 D${dayNum} (${item.date})`;
+                    const log = hwCompletion[normalizeKey(searchKey)];
+                    const isSubmitted = log && log.status === '완료';
+
+                    if (!taskStore[uniqueId]) {
+                        let logQs = [];
+                        if (log && log.questions && log.questions !== '없음') { logQs = log.questions.split(',').map(s => s.trim()); }
+                        taskStore[uniqueId] = { isDone: isSubmitted, qs: logQs, memo: log ? log.memo : '' };
+                    }
+
+                    let checkIconOpacity = taskStore[uniqueId].isDone ? 'opacity-100' : 'opacity-0';
+                    let boxBorderClass = taskStore[uniqueId].isDone ? `${tData.check} border-transparent` : 'border-gray-600 bg-transparent';
+                    const safeRange = escapeHTML(item.range).replace(/'/g, "\\'");
+                    const safeDate = escapeHTML(item.date).replace(/'/g, "\\'");
+
+                    html += `
+                        <div onclick="openTaskModal('${uniqueId}', '${safeDate}', '${safeRange}', '${targetClass}', '${tData.check}', '${classTheme}', ${week}, ${dayNum})" 
+                             class="flex justify-between items-center p-3 hover:bg-[#252525] rounded-xl cursor-pointer transition-all group active:scale-[0.98]">
+                            <div class="flex items-center gap-3">
+                                <span class="w-9 h-9 rounded-full ${listIconClass} bg-opacity-10 flex items-center justify-center font-bold text-sm border border-transparent transition-colors">D${dayNum}</span>
+                                <div><div class="text-xs text-gray-500 font-medium mb-0.5">${safeDate}</div><div class="text-gray-200 font-medium text-sm">${safeRange}</div></div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-xs font-bold text-gray-500 bg-[#121212] px-2 py-1 rounded hidden md:inline-block">${item.count}제</span>
+                                <div class="relative flex items-center justify-center">
+                                    <div id="ui-box-${uniqueId}" class="w-6 h-6 border-2 rounded check-btn flex items-center justify-center bg-transparent border-gray-600 ${taskStore[uniqueId].isDone ? boxBorderClass : ''}">
+                                        <svg id="ui-svg-${uniqueId}" class="w-4 h-4 text-white transition-opacity ${checkIconOpacity}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                html += `</div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function openTaskModal(id, date, range, className, checkClass, themeName, weekNum, dayNum) {
+            currentTask = { id, date, range, className, checkClass, themeName: themeName || 'blue', weekNum, dayNum };
+            const data = taskStore[id];
+            const tData = themeMapper[currentTask.themeName] || themeMapper['blue'];
+
+            document.getElementById('modalDateTitle').textContent = `${date} 과제`;
+            document.getElementById('modalRangeDesc').textContent = range;
+            document.getElementById('modalStatusCheck').checked = data.isDone;
+            document.getElementById('modalStatusText').textContent = data.isDone ? '완료' : '미완료';
+            document.getElementById('modalStatusText').className = data.isDone ? `ml-3 text-sm font-bold ${tData.text}` : 'ml-3 text-sm font-bold text-gray-400';
+            
+            const toggleBg = document.getElementById('modalToggleBg');
+            toggleBg.className = `w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${tData.toggle}`;
+
+            currentSelectedQs = new Set(data.qs);
+            generateQuestionButtons(range);
+            document.getElementById('modalMemoInput').value = data.memo;
+            
+            document.getElementById('taskModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); document.body.style.overflow = ''; }
+
+        function generateQuestionButtons(rangeStr) {
+            const container = document.getElementById('modalQsContainer');
+            container.innerHTML = '';
+            const regex = /(A|B|C)\s*(\d+)~(\d+)/g;
+            let match;
+            while ((match = regex.exec(rangeStr)) !== null) {
+                const level = match[1], start = parseInt(match[2]), end = parseInt(match[3]);
+                for (let i = start; i <= end; i++) {
+                    const btn = document.createElement('button');
+                    btn.textContent = i; btn.dataset.level = level;
+                    let selectedClass = level === 'A' ? 'border-green-500 bg-green-500' : level === 'B' ? 'border-blue-500 bg-blue-500' : 'border-red-500 bg-red-500';
+                    let defaultClass = level === 'A' ? 'border-green-900/50 text-green-400 bg-green-900/10' : level === 'B' ? 'border-blue-900/50 text-blue-400 bg-blue-900/10' : 'border-red-900/50 text-red-400 bg-red-900/10';
+                    
+                    // 문항 고유 식별자 (예: B9, C15)
+                    const qId = level + i.toString(); 
+
+                    if (currentSelectedQs.has(qId)) btn.className = `w-[42px] h-[42px] rounded-lg text-sm font-bold border-2 ${selectedClass} text-white shadow-lg scale-105 flex items-center justify-center transition-all`;
+                    else btn.className = `w-[42px] h-[42px] rounded-lg text-sm font-bold border ${defaultClass} flex items-center justify-center transition-all`;
+                    
+                    btn.onclick = () => { currentSelectedQs.has(qId) ? currentSelectedQs.delete(qId) : currentSelectedQs.add(qId); generateQuestionButtons(rangeStr); };
+                    container.appendChild(btn);
+                }
+            }
+        }
+
+        document.getElementById('modalStatusCheck').addEventListener('change', function() {
+            const tData = themeMapper[currentTask.themeName] || themeMapper['blue'];
+            document.getElementById('modalStatusText').textContent = this.checked ? '완료' : '미완료';
+            document.getElementById('modalStatusText').className = this.checked ? `ml-3 text-sm font-bold ${tData.text}` : 'ml-3 text-sm font-bold text-gray-400';
+        });
+
+        // 스마트 정렬 (예: B9, B10, C1 순서로 정렬)
+        function sortQuestions(a, b) {
+            const levelA = a.charAt(0); 
+            const levelB = b.charAt(0);
+            if (levelA !== levelB) return levelA.localeCompare(levelB);
+            return parseInt(a.substring(1)) - parseInt(b.substring(1));
+        }
+
+        function saveAndCloseTaskModal() {
+            const isDone = document.getElementById('modalStatusCheck').checked;
+            taskStore[currentTask.id] = { isDone: isDone, qs: Array.from(currentSelectedQs).sort(sortQuestions), memo: document.getElementById('modalMemoInput').value.trim() };
+            const box = document.getElementById(`ui-box-${currentTask.id}`);
+            const svg = document.getElementById(`ui-svg-${currentTask.id}`);
+            
+            if(box && svg) {
+                Object.values(themeMapper).forEach(t => box.classList.remove(t.check));
+                if (isDone) {
+                    box.classList.add(currentTask.checkClass); 
+                    box.classList.replace('border-gray-600', 'border-transparent');
+                    svg.classList.replace('opacity-0', 'opacity-100');
+                } else {
+                    box.classList.remove('border-transparent');
+                    box.classList.add('border-gray-600');
+                    svg.classList.replace('opacity-100', 'opacity-0');
+                }
+            }
+            closeTaskModal();
+        }
+
+        function resetTaskSelections() { document.getElementById('resetConfirmModal').classList.remove('hidden'); }
+        function closeResetConfirmModal() { document.getElementById('resetConfirmModal').classList.add('hidden'); }
+
+        function executeResetTask() {
+            closeResetConfirmModal(); 
+            document.getElementById('modalStatusCheck').checked = false;
+            document.getElementById('modalStatusCheck').dispatchEvent(new Event('change'));
+            currentSelectedQs.clear();
+            generateQuestionButtons(currentTask.range);
+            removePhoto();
+            document.getElementById('modalMemoInput').value = '';
+            
+            taskStore[currentTask.id] = { isDone: false, qs: [], memo: '' };
+            const box = document.getElementById(`ui-box-${currentTask.id}`);
+            const svg = document.getElementById(`ui-svg-${currentTask.id}`);
+            
+            if(box && svg) {
+                Object.values(themeMapper).forEach(t => box.classList.remove(t.check));
+                box.classList.remove('border-transparent');
+                box.classList.add('border-gray-600');
+                svg.classList.replace('opacity-100', 'opacity-0');
+            }
+        }
+
+        // ==========================================
+        // 5. 서버 데이터 전송 및 이미지 스마트 압축
+        // ==========================================
+        function resizeAndEncodeImage(file, maxWidth = 800) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve({ data: canvas.toDataURL('image/jpeg', 0.6), mimeType: 'image/jpeg' });
+                    };
+                    img.onerror = () => resolve(null); 
+                    img.src = event.target.result;
+                };
+                reader.onerror = () => resolve(null); 
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function submitDataAndCopy() {
+            const isDone = document.getElementById('modalStatusCheck').checked;
+            if(!isDone && currentSelectedQs.size === 0 && selectedPhotos.length === 0) {
+                showError("제출 불가", "완료 체크, 질문 문항, 또는 인증 사진 중 하나는 필수입니다.");
+                return;
+            }
+
+            const qsArr = Array.from(currentSelectedQs).sort(sortQuestions);
+            const qsText = qsArr.length > 0 ? qsArr.join(', ') : '없음';
+            const memo = document.getElementById('modalMemoInput').value.trim();
+            const stateText = isDone ? "완료" : "미완료";
+            
+            const studentId = currentUser ? String(currentUser.id) : "";
+            const studentName = currentUser ? currentUser.name : "알수없음";
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingText = loadingOverlay.querySelector('span');
+            loadingText.textContent = "사진을 스마트 압축 중입니다...";
+            loadingOverlay.classList.remove('hidden');
+
+            try {
+                // 클립보드 복사는 비동기 딜레이 이전에 가장 먼저 실행 (권한 회피)
+                copyToClipboardText(studentName, `${currentTask.weekNum}주차 D${currentTask.dayNum} (${currentTask.date})`, stateText, qsText, memo);
+
+                const base64Images = [];
+                if (selectedPhotos && selectedPhotos.length > 0) {
+                    for (let i=0; i<selectedPhotos.length; i++) {
+                        loadingText.textContent = `사진 압축 중... (${i+1}/${selectedPhotos.length})`;
+                        try {
+                            const imgData = await resizeAndEncodeImage(selectedPhotos[i]);
+                            if(imgData) base64Images.push(imgData);
+                        } catch(e) {}
+                    }
+                }
+
+                const formattedDateStr = `${currentTask.weekNum}주차 D${currentTask.dayNum} (${currentTask.date})`;
+                const uniqueSubmissionId = studentId + "_" + Date.now();
+
+                const payload = {
+                    appKey: APP_SECRET_KEY, 
+                    action: 'submitTask',
+                    submissionId: uniqueSubmissionId,
+                    userId: studentId,
+                    name: studentName,
+                    className: currentTask.className,
+                    date: formattedDateStr,
+                    range: currentTask.range,
+                    status: stateText,
+                    questions: qsText,
+                    memo: memo,
+                    images: base64Images
+                };
+
+                const payloadString = JSON.stringify(payload);
+                if (payloadString.length > 8000000) {
+                    loadingOverlay.classList.add('hidden');
+                    showError("용량 초과", "첨부한 사진의 총 용량이 너무 큽니다.<br>사진 개수를 줄이거나 해상도를 낮춰서 촬영해 주세요.");
+                    return;
+                }
+
+                loadingText.textContent = "서버에 안전하게 전송 중입니다...";
+
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: payloadString
+                });
+                
+                const resultJson = await response.json();
+                
+                loadingOverlay.classList.add('hidden');
+
+                if (resultJson.success) {
+                    saveAndCloseTaskModal();
+                    executeSuccessModal(qsArr);
+                    if (resultJson.imageWarning) console.warn(resultJson.imageWarning);
+                } else {
+                    showError("제출 실패", "서버 거부: " + (resultJson.reason || "알 수 없는 오류"));
+                }
+
+            } catch (error) {
+                console.error("전송 오류:", error);
+                loadingOverlay.classList.add('hidden');
+                saveAndCloseTaskModal(); 
+                showError("서버 전송 지연", "인터넷 연결이 원활하지 않아 데이터를 저장하지 못했습니다.<br>잠시 후 다시 시도해 주세요.");
+            }
+        }
+        
+        function copyToClipboardText(name, dateStr, stateText, qsText, memo) {
+            const stateIcon = stateText === "완료" ? "⭕ 완료" : "❌ 미완료";
+            let copyText = `[Signature ${currentTask.className} 숙제 인증]\n` +
+                           `🧑‍🎓 이름: ${name}\n` +
+                           `📅 일자: ${dateStr}\n` +
+                           `📚 범위: ${currentTask.range}\n` +
+                           `✅ 상태: ${stateIcon}\n` +
+                           `❓ 질문: ${qsText}\n`;
+            if (memo) copyText += `📝 코멘트: ${memo}\n`;
+
+            try {
+                const ta = document.createElement("textarea");
+                ta.value = copyText; ta.style.position="fixed"; ta.style.left="-9999px";
+                document.body.appendChild(ta); ta.focus(); ta.select();
+                document.execCommand('copy'); ta.remove();
+            } catch(e) {}
+        }
+
+        // 해설 영상 자동 매칭 및 성공 모달 띄우기
+        function executeSuccessModal(qsArr) {
+            const wrapper = document.getElementById('videoLinksWrapper');
+            const container = document.getElementById('videoLinksContainer');
+            container.innerHTML = '';
+            let foundCount = 0;
+            
+            if (qsArr && qsArr.length > 0) {
+                qsArr.forEach(qId => { // qId 예: 'B9', 'C15'
+                    // 글로벌 DB의 해설영상 탭 정보 활용
+                    const vLink = globalDB.videos ? globalDB.videos[qId] : null;
+                    const hLink = globalDB.handwritten ? globalDB.handwritten[qId] : null;
+                    
+                    if (vLink || hLink) {
+                        foundCount++;
+                        const match = qId.match(/^([A-Z])(\d+)$/);
+                        const level = match ? match[1] : '?'; 
+                        const qNum = match ? match[2] : qId; 
+                        
+                        let colorClass = level === 'A' ? 'green' : level === 'B' ? 'blue' : 'red';
+                        
+                        let buttonsHtml = '';
+                        if (vLink) buttonsHtml += `<button onclick="openVideoModal('${encodeURI(vLink)}')" class="bg-blue-500/20 px-3 py-1.5 rounded text-blue-400 text-[11px] font-bold hover:bg-blue-500/40 transition-colors shadow-sm">▶ 영상해설</button>`;
+                        if (hLink) buttonsHtml += `<button onclick="openHandwrittenModal('${encodeURI(hLink)}')" class="bg-gray-700 px-3 py-1.5 rounded text-white text-[11px] font-bold hover:bg-gray-600 transition-colors shadow-sm border border-gray-600">📝 손풀이</button>`;
+
+                        container.innerHTML += `
+                            <div class="bg-[#191919] border border-gray-800 rounded-xl p-3 flex justify-between items-center shadow-sm mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] bg-${colorClass}-500/20 text-${colorClass}-400 px-1.5 py-0.5 rounded border border-${colorClass}-500/30">${escapeHTML(level)}단계</span>
+                                    <span class="font-black text-white text-sm">${escapeHTML(qNum)}번</span>
+                                </div>
+                                <div class="flex gap-1.5">
+                                    ${buttonsHtml}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                if (foundCount > 0) {
+                    wrapper.classList.remove('hidden');
+                } else {
+                    wrapper.classList.remove('hidden');
+                    container.innerHTML = `<p class="text-gray-400 text-xs text-center py-3 bg-gray-800/50 rounded-lg">아직 해당 문항의 해설 영상이 등록되지 않았습니다.</p>`;
+                }
+            } else {
+                wrapper.classList.add('hidden');
+            }
+
+            document.getElementById('customAlertModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCustomAlert() { 
+            document.getElementById('customAlertModal').classList.add('hidden'); 
+            document.body.style.overflow = '';
+        }
+
+        function finalKakaoRedirect() {
+            closeCustomAlert();
+            window.open("https://open.kakao.com/o/s9qHTzTh", "_blank");
+        }
+
+        // ==========================================
+        // 6. 기타 팝업 / UI 로직들
+        // ==========================================
+        function showError(title, msg) {
+            const titleEl = document.getElementById('errorTitle');
+            const msgEl = document.getElementById('errorMessage');
+            if(titleEl) titleEl.innerHTML = title;
+            if(msgEl) msgEl.innerHTML = msg; 
+            const modal = document.getElementById('submitErrorModal');
+            if(modal) modal.classList.remove('hidden');
+        }
+        function closeErrorModal() { document.getElementById('submitErrorModal').classList.add('hidden'); }
+
+        function showLoginErrorModal(msg) {
+            const msgEl = document.getElementById('loginErrorMessage');
+            if(msgEl) msgEl.innerHTML = msg;
+            const modal = document.getElementById('loginErrorModal');
+            if(modal) modal.classList.remove('hidden');
+        }
+        function closeLoginErrorModal() { document.getElementById('loginErrorModal').classList.add('hidden'); }
+
+        function getDrivePreviewUrl(url) {
+            if (!url) return '';
+            let fileId = '';
+            const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+            if (match1) fileId = match1[1]; else if (match2) fileId = match2[1];
+            if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
+            return url; 
+        }
+
+        function openHandwrittenModal(imgUrl) {
+            const previewUrl = getDrivePreviewUrl(imgUrl);
+            document.getElementById('handwrittenLoading').classList.remove('hidden');
+            document.getElementById('handwrittenModal').classList.remove('hidden');
+            document.getElementById('handwrittenIframe').src = previewUrl;
+        }
+        function closeHandwrittenModal() { document.getElementById('handwrittenModal').classList.add('hidden'); document.getElementById('handwrittenIframe').src = ''; }
+
+        function getYouTubeEmbedUrl(url) {
+            if (!url) return '';
+            url = url.trim(); 
+            const regExp = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+            const match = url.match(regExp);
+            if (match && match[1]) { return `https://www.youtube.com/embed/${match[1]}?rel=0&playsinline=1`; }
+            return ''; 
+        }
+
+        function openVideoModal(url) {
+            const embedUrl = getYouTubeEmbedUrl(url);
+            document.getElementById('videoLoading').classList.remove('hidden');
+            document.getElementById('videoModal').classList.remove('hidden');
+            const iframe = document.getElementById('videoIframe');
+            if (embedUrl) iframe.src = embedUrl; else { document.getElementById('videoLoading').classList.add('hidden'); iframe.src = ''; }
+        }
+        function closeVideoModal() { document.getElementById('videoModal').classList.add('hidden'); document.getElementById('videoIframe').src = ''; }
+
+        function goFullscreen() {
+            const iframe = document.getElementById('videoIframe');
+            if (iframe.requestFullscreen) iframe.requestFullscreen();
+            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+            else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+            try { if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch((e) => console.log('회전 미지원 기기')); } } catch(e) {}
+        }
+
+        function handlePhotoSelection(event) {
+            const files = Array.from(event.target.files);
+            if (files.length > 0) {
+                selectedPhotos = selectedPhotos.concat(files);
+                const grid = document.getElementById('photoGrid');
+                grid.innerHTML = ''; 
+                selectedPhotos.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'w-20 h-20 object-cover rounded-lg border border-gray-600 flex-shrink-0';
+                        grid.appendChild(img);
+                    }
+                    reader.readAsDataURL(file);
+                });
+                document.getElementById('photoCountText').innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 누적 ${selectedPhotos.length}장 첨부됨!`;
+                document.getElementById('photoUploadBtn').classList.add('hidden');
+                document.getElementById('photoPreviewContainer').classList.remove('hidden');
+            }
+        }
+
+        function removePhoto() {
+            document.getElementById('modalPhotoInput').value = '';
+            selectedPhotos = [];
+            document.getElementById('photoGrid').innerHTML = '';
+            document.getElementById('photoPreviewContainer').classList.add('hidden');
+            document.getElementById('photoUploadBtn').classList.remove('hidden');
+        }
+    </script>
+    <script>
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) { e.preventDefault(); e.returnValue = false; }
+      });
+    </script>
+</body>
+</html>

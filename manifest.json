@@ -1,0 +1,20 @@
+{
+  "name": "호빈T Signature 관리 어플리케이션",
+  "short_name": "H-Signature",
+  "start_url": "Signature%20App.html", 
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1E1E1E",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
