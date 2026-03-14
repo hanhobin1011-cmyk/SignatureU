@@ -3,126 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Signature 앱 설치 가이드</title>
-    
+    <title>Signature 앱 설치 가이드 (STAGING)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
-    <link rel="apple-touch-icon" href="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png">
-
+    <link rel="apple-touch-icon" href="/SignatureU/icon-512x512.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background-color: #121212; color: #E0E0E0; font-family: 'Noto Sans KR', sans-serif; word-break: keep-all; }
         .app-icon-shadow { box-shadow: 0 10px 25px -5px rgba(251, 191, 36, 0.3); }
-        .step-card { background: #1E1E1E; border: 1px solid #333; transition: transform 0.2s; }
-        .step-card:active { transform: scale(0.98); }
+        .step-number { background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px; flex-shrink: 0; }
     </style>
 </head>
-<body class="min-h-screen pb-20 selection:bg-yellow-500 selection:text-white">
-    <header class="pt-12 pb-6 px-6 text-center border-b border-gray-800 bg-[#1A1A1A] sticky top-0 z-10">
-        <h1 class="text-xl font-black text-white tracking-tight">앱 간편 설치 가이드</h1>
+<body class="min-h-screen pb-20 selection:bg-yellow-500">
+    <header class="pt-12 pb-6 px-6 text-center border-b border-gray-800 bg-[#1A1A1A]">
+        <h1 class="text-xl font-black text-white">앱 간편 설치 가이드</h1>
     </header>
-
     <main class="max-w-md mx-auto px-6 pt-10">
-        <div class="flex flex-col items-center mb-10 text-center">
-            <div class="w-24 h-24 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-[22%] flex items-center justify-center text-white font-black text-4xl app-icon-shadow mb-6 border border-yellow-300/50 overflow-hidden">
-                <img src="https://hanhobin1011-cmyk.github.io/Signature/icon-512x512.png" alt="S" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerText='S'">
-            </div>
-            <h2 class="text-2xl font-black text-white mb-2">Signature 매니저</h2>
-            <p class="text-sm text-gray-400 leading-relaxed">한호빈T 수학과 전용 어플리케이션<br>바탕화면에 추가하여 편리하게 이용하세요!</p>
+        <div class="text-center mb-10">
+            <img src="icon-512x512.png" alt="Signature Icon" class="w-24 h-24 mx-auto mb-6 rounded-[22%] app-icon-shadow border border-gray-700">
+            <h2 class="text-2xl font-black text-white mb-2">Signature (TEST)</h2>
+            <p class="text-sm text-gray-400">바탕화면에 추가하여 편리하게 이용하세요!</p>
         </div>
 
         <div class="flex bg-[#1E1E1E] rounded-2xl p-1.5 mb-8 border border-gray-800">
-            <button id="tab-ios" onclick="switchTab('ios')" class="flex-1 py-3 rounded-xl text-sm font-bold bg-gray-700 text-white shadow-lg transition-all">🍎 아이폰 (iOS)</button>
-            <button id="tab-android" onclick="switchTab('android')" class="flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-300 transition-all">🤖 안드로이드</button>
+            <button id="tab-android" onclick="switchTab('android')" class="flex-1 py-3 rounded-xl text-sm font-bold bg-gray-700 text-white shadow-lg transition-all">안드로이드 (Galaxy)</button>
+            <button id="tab-ios" onclick="switchTab('ios')" class="flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-300 transition-all">아이폰 (iOS)</button>
         </div>
 
-        <div id="guide-ios" class="space-y-4">
-            <div class="step-card rounded-2xl p-6">
-                <div class="flex items-center gap-4 mb-4"><div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">1</div><p class="text-white font-bold">사파리(Safari) 하단 중앙의<br><span class="text-blue-400">[공유]</span> 버튼을 누릅니다.</p></div>
-                <div class="bg-gray-900/50 rounded-xl p-4 flex justify-center border border-gray-800"><svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></div>
+        <div id="guide-android" class="space-y-6 bg-[#1E1E1E] p-6 rounded-3xl border border-gray-800">
+            <h3 class="font-bold text-blue-400 flex items-center gap-2 text-lg mb-4">🤖 안드로이드 설치 방법</h3>
+            <div class="space-y-5">
+                <div class="flex items-start"><span class="step-number">1</span><p class="text-sm leading-relaxed text-gray-300">현재 화면 오른쪽 상단의 <strong>점 3개 (⋮)</strong> 메뉴 버튼을 누릅니다.</p></div>
+                <div class="flex items-start"><span class="step-number">2</span><p class="text-sm leading-relaxed text-gray-300"><strong>[현재 화면을 홈 화면에 추가]</strong> 또는 <strong>[앱 설치]</strong>를 선택합니다.</p></div>
+                <div class="flex items-start"><span class="step-number">3</span><p class="text-sm leading-relaxed text-gray-300">설치 팝업이 뜨면 <strong>[추가]</strong> 또는 <strong>[설치]</strong>를 누릅니다.</p></div>
             </div>
-            <div class="step-card rounded-2xl p-6">
-                <div class="flex items-center gap-4 mb-4"><div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">2</div><p class="text-white font-bold">메뉴를 아래로 내려<br><span class="text-blue-400">[홈 화면에 추가]</span>를 선택합니다.</p></div>
-                <div class="bg-gray-900/50 rounded-xl p-4 flex justify-center border border-gray-800"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-            </div>
-            <div class="step-card rounded-2xl p-6">
-                <div class="flex items-center gap-4"><div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">3</div><p class="text-white font-bold">우측 상단의 <span class="text-blue-400">[추가]</span>를 누르면 완료!</p></div>
-            </div>
+            <button id="btnAutoInstall" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg text-sm">💡 자동 설치 버튼 (크롬 브라우저 전용)</button>
         </div>
 
-        <div id="guide-android" class="space-y-4 hidden">
-            <button id="btnDirectInstall" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-lg flex items-center justify-center gap-2 mb-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                안드로이드 앱 즉시 설치
-            </button>
-            <p class="text-center text-xs text-gray-500 mb-6 border-b border-gray-800 pb-6">버튼이 작동하지 않거나, 이미 설치하셨다면<br>아래의 수동 설치 방법을 참고해 주세요.</p>
-            <div class="step-card rounded-2xl p-6">
-                <div class="flex items-center gap-4 mb-4"><div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold flex-shrink-0">1</div><p class="text-white font-bold">크롬(Chrome) 우측 상단의<br><span class="text-green-500">[메뉴(점 3개)]</span>를 누릅니다.</p></div>
-                <div class="bg-gray-900/50 rounded-xl p-4 flex justify-center border border-gray-800"><svg class="w-10 h-10 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div>
-            </div>
-            <div class="step-card rounded-2xl p-6">
-                <div class="flex items-center gap-4 mb-4"><div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold flex-shrink-0">2</div><p class="text-white font-bold">목록에서 <span class="text-green-500">[앱 설치]</span> 또는<br><span class="text-green-500">[홈 화면에 추가]</span>를 누릅니다.</p></div>
-                <div class="bg-gray-900/50 rounded-xl p-4 flex justify-center border border-gray-800"><svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg></div>
+        <div id="guide-ios" class="space-y-6 bg-[#1E1E1E] p-6 rounded-3xl border border-gray-800 hidden">
+            <h3 class="font-bold text-purple-400 flex items-center gap-2 text-lg mb-4">🍎 아이폰 (Safari) 설치 방법</h3>
+            <div class="bg-red-500/10 border border-red-500/20 p-3 rounded-xl mb-4"><p class="text-xs text-red-400 font-bold leading-relaxed">※ 아이폰은 반드시 <strong class="text-red-300">Safari 브라우저</strong>로 접속해야 합니다. (카카오톡, 네이버 인앱 브라우저 불가)</p></div>
+            <div class="space-y-5">
+                <div class="flex items-start"><span class="step-number bg-purple-500">1</span><p class="text-sm leading-relaxed text-gray-300">화면 맨 아래 가운데에 있는 <strong>공유 아이콘 (네모 안에서 화살표가 위로 나가는 모양)</strong>을 누릅니다.</p></div>
+                <div class="flex items-start"><span class="step-number bg-purple-500">2</span><p class="text-sm leading-relaxed text-gray-300">메뉴를 위로 올려서 <strong>[홈 화면에 추가] (+)</strong> 항목을 선택합니다.</p></div>
+                <div class="flex items-start"><span class="step-number bg-purple-500">3</span><p class="text-sm leading-relaxed text-gray-300">우측 상단의 <strong>[추가]</strong> 버튼을 누릅니다.</p></div>
             </div>
         </div>
 
-        <div class="mt-12 space-y-4">
-            <a href="./Signature App.html" class="block w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold text-center py-4 rounded-2xl shadow-lg transition-all active:scale-95">로그인 화면으로 돌아가기</a>
-            <p class="text-center text-xs text-gray-600">설치가 완료되었다면 브라우저 창을 닫아주세요.</p>
+        <div class="mt-10 mb-8">
+            <a href="./Signature App.html" class="block w-full bg-gray-800 border border-gray-700 hover:bg-gray-700 text-white font-bold py-4 rounded-2xl text-center transition-all shadow-md">설치를 마쳤습니다. (로그인 화면으로 이동)</a>
         </div>
     </main>
 
     <script>
-        // ★ 수정: 수동 서비스 워커(sw.js) 등록 코드 삭제
-
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+        document.getElementById('btnAutoInstall').addEventListener('click', async () => {
+            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; } 
+            else { alert("이미 앱이 설치되어 있거나, 현재 브라우저에서는 즉시 설치를 지원하지 않습니다.\n화면의 수동 설치 방법을 참고해 주세요."); }
         });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnDirectInstall = document.getElementById('btnDirectInstall');
-            if (btnDirectInstall) {
-                btnDirectInstall.addEventListener('click', async () => {
-                    if (deferredPrompt) {
-                        deferredPrompt.prompt();
-                        const { outcome } = await deferredPrompt.userChoice;
-                        if (outcome === 'accepted') {
-                            btnDirectInstall.innerText = "✅ 설치가 완료되었습니다!";
-                            btnDirectInstall.disabled = true;
-                            btnDirectInstall.classList.replace('from-green-500', 'from-gray-600');
-                            btnDirectInstall.classList.replace('to-emerald-500', 'to-gray-700');
-                        }
-                        deferredPrompt = null; 
-                    } else {
-                        alert("이미 앱이 설치되어 있거나, 현재 브라우저에서는 즉시 설치를 지원하지 않습니다.\n화면 아래의 [수동 설치 방법]을 참고해 주세요.");
-                    }
-                });
-            }
-        });
-
         const isIos = () => /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
         window.onload = () => { if (!isIos()) switchTab('android'); };
-
         function switchTab(os) {
-            const btnIos = document.getElementById('tab-ios');
-            const btnAndroid = document.getElementById('tab-android');
-            const guideIos = document.getElementById('guide-ios');
-            const guideAndroid = document.getElementById('guide-android');
-
-            if (os === 'ios') {
-                btnIos.className = "flex-1 py-3 rounded-xl text-sm font-bold bg-gray-700 text-white shadow-lg transition-all";
-                btnAndroid.className = "flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-300 transition-all";
-                guideIos.classList.remove('hidden'); guideAndroid.classList.add('hidden');
-            } else {
-                btnAndroid.className = "flex-1 py-3 rounded-xl text-sm font-bold bg-gray-700 text-white shadow-lg transition-all";
-                btnIos.className = "flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-300 transition-all";
-                guideAndroid.classList.remove('hidden'); guideIos.classList.add('hidden');
-            }
+            const bA = document.getElementById('tab-android'), bI = document.getElementById('tab-ios');
+            const gA = document.getElementById('guide-android'), gI = document.getElementById('guide-ios');
+            if (os === 'ios') { bI.className = "flex-1 py-3 rounded-xl text-sm font-bold bg-gray-700 text-white shadow-lg"; bA.className = "flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-300"; gI.classList.remove('hidden'); gA.classList.add('hidden'); } 
+            else { bA.className = "flex-1 py-3 rounded-xl text-sm font-bold bg-gray-700 text-white shadow-lg"; bI.className = "flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-gray-300"; gA.classList.remove('hidden'); gI.classList.add('hidden'); }
         }
     </script>
 </body>

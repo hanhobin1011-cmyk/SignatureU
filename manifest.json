@@ -1,7 +1,7 @@
 {
-  "name": "호빈T Signature 관리 어플리케이션",
+  "name": "호빈T Signature 관리 어플리케이션(STAGING)",
   "short_name": "H-Signature",
-  "start_url": "Signature%20App.html", 
+  "start_url": "/SignatureU/Signature%20App.html", 
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#1E1E1E",
