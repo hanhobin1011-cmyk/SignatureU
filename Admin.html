@@ -218,7 +218,7 @@
             const idx = btn.dataset.index !== undefined ? parseInt(btn.dataset.index) : null;
 
             if(act === 'login') handleLogin();
-            else if(act === 'logout') { sessionStorage.clear(); location.reload(); }
+            else if(act === 'logout') handleLogout();
             else if(act === 'nav') {
                 currentTab = val;
                 document.querySelectorAll('.sidebar-btn').forEach(b => {
@@ -233,7 +233,7 @@
             else if(act === 'closeModal') document.getElementById(val).classList.add('hidden-view');
             else if(act === 'submitForm') handleFormSubmit();
             else if(act === 'openUserForm') openUserForm(idx);
-            else if(act === 'deleteUser') deleteUser(idx, btn.dataset.name);
+            else if(act === 'deleteUser') deleteUser(idx, btn.dataset.name, btn.dataset.userid);
             else if(act === 'deleteBatchHomework') deleteBatchHomework();
             else if(act === 'sendBatchReview') sendBatchReviewAlimtalk();
             else if(act === 'openReviewForm') openHwReviewModal(idx);
@@ -241,7 +241,7 @@
             else if(act === 'fetchUnsubmitted') fetchUnsubmitted();
             else if(act === 'sendUrge') sendUrgeAlimtalk();
             else if(act === 'openReportForm') openReportForm(idx);
-            else if(act === 'deleteReport') deleteReport(idx, btn.dataset.testname); // 🟢 [추가됨] 리포트 삭제 이벤트
+            else if(act === 'deleteReport') deleteReport(idx, btn.dataset.testname, btn.dataset.reportid);
             else if(act === 'addWrongAnswer') addWrongAnswer();
             else if(act === 'removeWrongAnswer') removeWrongAnswer(idx);
             else if(act === 'triggerRepPhoto') document.getElementById('repPhotoInput').click();
@@ -314,6 +314,22 @@
             } finally { btn.textContent = "시스템 접속"; btn.disabled = false; }
         }
 
+        // 🟢 [수정됨] 서버 세션 폐기 성공 시에만 로컬 세션 정리 (실패 시 차단 및 알림)
+        async function handleLogout() {
+            showLoading(true);
+            try {
+                await apiCall('adminLogout', {}, true);
+                // 통신 성공 시에만 로컬 스토리지 삭제 및 새로고침 진행
+                sessionStorage.clear();
+                location.reload();
+            } catch(e) {
+                // 통신 실패나 서버 에러 발생 시 강제로 로그아웃 처리하지 않음
+                alert("서버와 통신할 수 없어 로그아웃에 실패했습니다.\n네트워크 상태를 확인하고 다시 시도해주세요.\n(에러: " + e.message + ")");
+            } finally {
+                showLoading(false);
+            }
+        }
+
         async function loadGlobalData(hideLoader) {
             const res = await apiCall('adminListUsers', {}, hideLoader);
             state.users = res.data; state.classes = res.classes || [];
@@ -376,7 +392,7 @@
                         
                         let manageBtns = state.adminRole === '최고관리자' ? 
                             `<button data-action="openUserForm" data-index="${i}" class="text-indigo-600 font-bold px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 mr-1 transition-colors">수정</button> 
-                             <button data-action="deleteUser" data-index="${u._rowIndex}" data-name="${escapeHTML(u.name)}" class="text-rose-600 font-bold px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-colors">삭제</button>` : 
+                             <button data-action="deleteUser" data-index="${u._rowIndex}" data-name="${escapeHTML(u.name)}" data-userid="${escapeHTML(u.id)}" class="text-rose-600 font-bold px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 transition-colors">삭제</button>` : 
                             `<span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded border border-slate-200">조회전용</span>`;
 
                         h += `<tr class="hover:bg-slate-50 transition-colors user-row" data-search="${escapeHTML(u.name)} ${escapeHTML(u.className)} ${escapeHTML(u.id)} ${escapeHTML(u.phone)}"><td class="p-4 text-center"><span class="px-2.5 py-1 rounded-md text-[11px] font-bold border ${badge}">${escapeHTML(u.role)}</span></td><td class="p-4 font-bold text-slate-800">${escapeHTML(u.name)} <span class="text-xs text-slate-400 font-normal ml-1">${escapeHTML(u.className||'')}</span></td><td class="p-4 font-mono text-slate-600 text-xs bg-slate-50 rounded mx-4 inline-block mt-3 border border-slate-200 px-2 py-1">${escapeHTML(u.id)}</td><td class="p-4 text-slate-600 font-medium">${escapeHTML(u.phone)}</td><td class="p-4 text-center">${manageBtns}</td></tr>`;
@@ -415,7 +431,9 @@
                     state.homework.forEach((hw) => {
                         let statusColor = hw.reviewStatus === '대기' ? 'bg-amber-100 text-amber-700 border-amber-200' : hw.reviewStatus === '반려' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200';
                         let btn = generateThumbnailHtml(hw.photoLink);
-                        h += `<tr class="hover:bg-slate-50 transition-colors hw-row" data-class="${escapeHTML(hw.className)}" data-status="${escapeHTML(hw.reviewStatus)}" data-name="${escapeHTML(hw.name)}"><td class="p-4 text-center"><input type="checkbox" class="hw-chk w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" value="${hw.rowIndex}"></td><td class="p-4 text-xs text-slate-500 font-mono">${escapeHTML(hw.timestamp.substring(5,16))}</td><td class="p-4 font-bold text-slate-800">${escapeHTML(hw.name)}<br><span class="text-[11px] text-slate-400 font-normal bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 inline-block mt-1">${escapeHTML(hw.className)}</span></td><td class="p-4 text-xs text-slate-700 font-medium" style="white-space: normal; min-width: 200px;">${escapeHTML(hw.range)}</td><td class="p-4 text-center">${btn}</td><td class="p-4 text-center"><span class="px-2.5 py-1 rounded-md text-[11px] font-bold border ${statusColor} inline-block">${escapeHTML(hw.reviewStatus)}</span></td><td class="p-4 text-center"><button data-action="openReviewForm" data-index="${hw.rowIndex}" class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors w-full shadow-sm">피드백 남기기</button></td></tr>`;
+                        
+                        // 🟢 submissionId를 데이터셋으로 포함
+                        h += `<tr class="hover:bg-slate-50 transition-colors hw-row" data-class="${escapeHTML(hw.className)}" data-status="${escapeHTML(hw.reviewStatus)}" data-name="${escapeHTML(hw.name)}"><td class="p-4 text-center"><input type="checkbox" class="hw-chk w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" value="${hw.rowIndex}" data-subid="${escapeHTML(hw.submissionId || '')}"></td><td class="p-4 text-xs text-slate-500 font-mono">${escapeHTML(hw.timestamp.substring(5,16))}</td><td class="p-4 font-bold text-slate-800">${escapeHTML(hw.name)}<br><span class="text-[11px] text-slate-400 font-normal bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 inline-block mt-1">${escapeHTML(hw.className)}</span></td><td class="p-4 text-xs text-slate-700 font-medium" style="white-space: normal; min-width: 200px;">${escapeHTML(hw.range)}</td><td class="p-4 text-center">${btn}</td><td class="p-4 text-center"><span class="px-2.5 py-1 rounded-md text-[11px] font-bold border ${statusColor} inline-block">${escapeHTML(hw.reviewStatus)}</span></td><td class="p-4 text-center"><button data-action="openReviewForm" data-index="${hw.rowIndex}" class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors w-full shadow-sm">피드백 남기기</button></td></tr>`;
                     });
                     p.innerHTML = h + '</tbody></table></div></div>';
                 }
@@ -461,8 +479,9 @@
                     
                     state.reports.forEach((r,i) => {
                         let pBtn = generateThumbnailHtml(r['테스트사진']);
-                        // 🟢 [수정됨] 최고관리자인 경우 삭제 버튼 렌더링 추가
-                        let delBtn = state.adminRole === '최고관리자' ? `<button data-action="deleteReport" data-index="${r._rowIndex}" data-testname="${escapeHTML(r['TEST이름'])}" class="text-rose-600 bg-rose-50 border border-rose-100 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-rose-100 transition-colors shadow-sm ml-1">삭제</button>` : '';
+                        
+                        let reportIdStr = escapeHTML(r['리포트ID'] || r.reportId || '');
+                        let delBtn = state.adminRole === '최고관리자' ? `<button data-action="deleteReport" data-index="${r._rowIndex}" data-testname="${escapeHTML(r['TEST이름'])}" data-reportid="${reportIdStr}" class="text-rose-600 bg-rose-50 border border-rose-100 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-rose-100 transition-colors shadow-sm ml-1">삭제</button>` : '';
                         
                         h += `<tr class="hover:bg-slate-50 transition-colors report-row" data-testname="${escapeHTML(r['TEST이름'])}" data-student="${escapeHTML(r['이름'])} ${escapeHTML(r['아이디'])}"><td class="p-4 font-bold text-indigo-700">${escapeHTML(r['TEST이름'])}</td><td class="p-4 font-bold text-slate-800">${escapeHTML(r['이름'])} <span class="text-[11px] text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 ml-1">${escapeHTML(r['아이디'])}</span></td><td class="p-4 text-center"><span class="font-black text-slate-800 text-base">${escapeHTML(r['본인점수'])}</span><span class="text-xs text-slate-500 font-medium"> / ${escapeHTML(r['반평균'])}점</span></td><td class="p-4 text-center">${pBtn}</td><td class="p-4 text-center whitespace-nowrap"><button data-action="openReportForm" data-index="${i}" class="text-indigo-600 bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm">수정</button>${delBtn}</td></tr>`;
                     });
@@ -653,9 +672,9 @@
             try { await apiCall('adminSaveUser', { userData: data, rowIndex: rowIndex ? parseInt(rowIndex) : null }); document.getElementById('formModal').classList.add('hidden-view'); loadPanel('users', true); } catch(e) { alert(e.message); }
         }
 
-        async function deleteUser(rowIndex, name) {
+        async function deleteUser(rowIndex, name, userId) {
             if(!confirm(`[${name}] 계정을 정말 삭제하시겠습니까? (복구 불가)`)) return;
-            try { await apiCall('adminDeleteUser', { rowIndex }); loadPanel('users', true); } catch(e) { alert(e.message); }
+            try { await apiCall('adminDeleteUser', { rowIndex: parseInt(rowIndex), userId: userId }); loadPanel('users', true); } catch(e) { alert(e.message); }
         }
 
         function openPhotoViewer(encUrl) {
@@ -681,6 +700,7 @@
             document.getElementById('formModalContent').innerHTML = `
                 <div class="space-y-6">
                     <input type="hidden" id="f_hw_row" value="${rowIndex}">
+                    <input type="hidden" id="f_hw_subid" value="${escapeHTML(h.submissionId || '')}">
                     <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-xl text-sm flex flex-col gap-3">
                         <div class="flex justify-between items-start border-b border-indigo-200/50 pb-3">
                             <div><p class="text-xs text-indigo-400 font-bold mb-1">학습 범위</p><p class="text-indigo-900 font-bold">${escapeHTML(h.range)}</p></div>
@@ -698,22 +718,37 @@
         }
 
         async function saveHwReview() {
-            const row = parseInt(document.getElementById('f_hw_row').value), status = document.getElementById('f_hw_status').value, feedback = document.getElementById('f_hw_feedback').value.trim();
-            try { await apiCall('adminSaveReview', { rowIndex: row, reviewStatus: status, feedback }); document.getElementById('formModal').classList.add('hidden-view'); loadPanel('homework', true); } catch(e) { alert(e.message); }
+            const row = parseInt(document.getElementById('f_hw_row').value);
+            const subId = document.getElementById('f_hw_subid').value;
+            const status = document.getElementById('f_hw_status').value;
+            const feedback = document.getElementById('f_hw_feedback').value.trim();
+            try { await apiCall('adminSaveReview', { rowIndex: row, submissionId: subId, reviewStatus: status, feedback }); document.getElementById('formModal').classList.add('hidden-view'); loadPanel('homework', true); } catch(e) { alert(e.message); }
         }
 
         async function deleteBatchHomework() {
-            const checks = Array.from(document.querySelectorAll('.hw-chk:checked')).map(c => parseInt(c.value));
-            if(!checks.length) return alert("삭제할 숙제 제출 건을 체크해주세요.");
-            if(!confirm(`선택한 ${checks.length}건의 데이터를 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-            try { await apiCall('adminDeleteHomeworkBatch', { rowIndices: checks }); loadPanel('homework', true); } catch(e) { alert(e.message); }
+            const checks = Array.from(document.querySelectorAll('.hw-chk:checked'));
+            const rowIndices = checks.map(c => parseInt(c.value));
+            const submissionIds = checks.map(c => c.dataset.subid).filter(id => id && id !== 'undefined');
+            if(!rowIndices.length) return alert("삭제할 숙제 제출 건을 체크해주세요.");
+            if(!confirm(`선택한 ${rowIndices.length}건의 데이터를 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+            try { await apiCall('adminDeleteHomeworkBatch', { rowIndices: rowIndices, submissionIds: submissionIds }); loadPanel('homework', true); } catch(e) { alert(e.message); }
         }
 
         async function sendBatchReviewAlimtalk() {
-            const checks = Array.from(document.querySelectorAll('.hw-chk:checked')).map(c => parseInt(c.value));
-            if(!checks.length) return alert("알림톡을 발송할 대상을 체크해주세요.");
-            if(!confirm(`선택한 ${checks.length}명의 학생에게 [검수완료 알림톡]을 일괄 발송하시겠습니까?\n발송 후 상태는 '완료(알림)'으로 변경됩니다.`)) return;
-            try { const res = await apiCall('adminSendBatchReviewAlimtalk', { rowIndices: checks }); alert(`✅ 발송 성공: ${res.result.success}건\n❌ 발송 실패: ${res.result.fail}건\n(실패한 건은 휴대폰 번호를 확인해주세요.)`); loadPanel('homework', true); } catch(e) { alert(e.message); }
+            const checks = Array.from(document.querySelectorAll('.hw-chk:checked'));
+            const rowIndices = checks.map(c => parseInt(c.value));
+            const submissionIds = checks.map(c => c.dataset.subid).filter(id => id && id !== 'undefined');
+            
+            if(!rowIndices.length) return alert("알림톡을 발송할 대상을 체크해주세요.");
+            if(!confirm(`선택한 ${rowIndices.length}명의 학생에게 [검수완료 알림톡]을 일괄 발송하시겠습니까?\n발송 후 상태는 '완료(알림)'으로 변경됩니다.`)) return;
+            
+            try { 
+                const res = await apiCall('adminSendBatchReviewAlimtalk', { rowIndices: rowIndices, submissionIds: submissionIds }); 
+                alert(`✅ 발송 성공: ${res.result.success}건\n❌ 발송 실패: ${res.result.fail}건\n(실패한 건은 휴대폰 번호를 확인해주세요.)`); 
+                loadPanel('homework', true); 
+            } catch(e) { 
+                alert(e.message); 
+            }
         }
 
         async function fetchUnsubmitted() {
@@ -756,6 +791,7 @@
             document.getElementById('formModalContent').innerHTML = `
                 <div class="space-y-8">
                     <input type="hidden" id="f_r_row" value="${r._rowIndex || ''}">
+                    <input type="hidden" id="f_r_val_id" value="${escapeHTML(r['리포트ID'] || r.reportId || '')}">
                     
                     <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-600 mb-2">시행된 TEST 이름 <span class="text-red-500">*</span></label><input type="text" id="f_r_testname" value="${escapeHTML(r['TEST이름'])}" placeholder="예: 3월 1주차 주간 모의고사" class="w-full border border-slate-300 p-3 rounded-xl font-bold text-indigo-700 bg-white focus:border-indigo-500 outline-none"></div>
@@ -871,16 +907,24 @@
                 };
                 for(let file of tempReportPhotos) data.images.push(await resizeImageClientSide(file));
                 const row = document.getElementById('f_r_row').value;
-                await fetch(API_URL, {method:'POST', body:JSON.stringify({action:'adminSaveReport', adminToken:getToken(), reportData:data, rowIndex: row?parseInt(row):null})});
-                document.getElementById('formModal').classList.add('hidden-view'); loadPanel('reports', true);
-            } catch(e) { alert("리포트 저장 실패: "+e.message); } finally { showLoading(false); }
+                const repId = document.getElementById('f_r_val_id').value;
+                data.reportId = repId; 
+                
+                await apiCall('adminSaveReport', { reportData: data, rowIndex: row ? parseInt(row) : null, reportId: repId }, true);
+                
+                document.getElementById('formModal').classList.add('hidden-view'); 
+                loadPanel('reports', true);
+            } catch(e) { 
+                alert("리포트 저장 실패: " + e.message); 
+            } finally { 
+                showLoading(false); 
+            }
         }
 
-        // 🟢 [추가됨] 테스트 리포트 삭제 함수
-        async function deleteReport(rowIndex, testName) {
+        async function deleteReport(rowIndex, testName, reportId) {
             if(!confirm(`[${testName}] 테스트 리포트를 정말 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.`)) return;
             try { 
-                await apiCall('adminDeleteReport', { rowIndex: parseInt(rowIndex) }); 
+                await apiCall('adminDeleteReport', { rowIndex: parseInt(rowIndex), reportId: reportId }); 
                 loadPanel('reports', true); 
             } catch(e) { alert(e.message); }
         }
