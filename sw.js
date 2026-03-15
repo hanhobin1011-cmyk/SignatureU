@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_ENV = 'staging'; // 운영 배포 시 'prod'로 변경하시면 됩니다.
 const CACHE_NAME = `signature-app-${CACHE_VERSION}-${CACHE_ENV}`;
 
